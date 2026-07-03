@@ -1,0 +1,6 @@
+{
+  "name": "Airbnb Style Stays & Experiences",
+  "description": "An elegant vacation rentals and experiences marketplace styled strictly under Airbnb design system specifications.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
