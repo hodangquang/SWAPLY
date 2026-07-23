@@ -36,13 +36,19 @@ export default function ListingCard({
     >
       {/* Container Image Carousel */}
       <div className="relative w-full aspect-[1/1] bg-pebble rounded-[20px] overflow-hidden select-none">
-        {/* Guest favorite Badge */}
-        {property.isGuestFavorite && (
+        {/* Status Badge */}
+        {property.status && property.status !== "Active" && (
           <div 
-            className="absolute top-3 left-3 bg-cloud text-carbon text-[11px] font-semibold tracking-[0.44px] uppercase px-[10px] py-[6px] rounded-[4px] z-10 shadow-[0_2px_6px_rgba(0,0,0,0.25)]"
+            className={`absolute top-3 left-3 text-cloud text-[11px] font-semibold tracking-[0.44px] uppercase px-[10px] py-[6px] rounded-[4px] z-10 shadow-[0_2px_6px_rgba(0,0,0,0.25)] ${
+              property.status === "Active" 
+                ? "bg-emerald-500" 
+                : property.status === "Pending" 
+                  ? "bg-amber-500" 
+                  : "bg-gray-500"
+            }`}
             style={{ fontFeatureSettings: '"salt" on' }}
           >
-            Uy tín cao
+            {property.status === "Active" ? "Hoạt động" : property.status === "Pending" ? "Chờ duyệt" : property.status}
           </div>
         )}
 
@@ -62,12 +68,18 @@ export default function ListingCard({
         </button>
 
         {/* Carousel Image Display */}
-        <img
-          src={property.images[activeImgIndex]}
-          alt={property.title}
-          referrerPolicy="no-referrer"
-          className="w-full h-full object-cover transition duration-500 ease-out group-hover:scale-102"
-        />
+        {property.images && property.images.length > 0 ? (
+          <img
+            src={property.images[activeImgIndex]}
+            alt={property.title}
+            referrerPolicy="no-referrer"
+            className="w-full h-full object-cover transition duration-500 ease-out group-hover:scale-102"
+          />
+        ) : (
+          <div className="w-full h-full bg-fog flex items-center justify-center text-slate text-xs font-semibold select-none">
+            Không có hình ảnh
+          </div>
+        )}
 
         {/* Carousel Control Buttons (visible on hover) */}
         <div className="absolute inset-0 flex items-center justify-between px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
@@ -107,21 +119,21 @@ export default function ListingCard({
           <div className="flex items-center gap-1 shrink-0">
             <Star className="h-3 w-3 fill-carbon text-carbon" />
             <span className="text-xs font-semibold text-carbon">
-              {property.rating.toFixed(2)}
+              {property.rating?.toFixed(2) || "5.00"}
             </span>
           </div>
         </div>
 
-        <p className="font-sans text-slate text-xs leading-none">
-          {property.hostType}
+        <p className="font-sans text-slate text-xs">
+          {property.ownerName || "Thành viên Swaply"}
         </p>
         
         <p className="font-sans text-slate text-xs">
-          {property.dateRange}
+          {property.location || "Hồ Chí Minh"}
         </p>
 
         <p className="font-sans text-carbon text-sm mt-0.5">
-          <span className="font-bold">{property.price.toLocaleString("vi-VN")} đ</span>
+          <span className="font-bold">{(property.estimatedValue || property.price || 0).toLocaleString("vi-VN")} đ</span>
           <span className="text-slate text-xs font-normal">
              / sản phẩm
           </span>

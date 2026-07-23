@@ -1,22 +1,51 @@
+export interface Category {
+  id: string;
+  name: string;
+  description?: string;
+}
+
 export interface Property {
   id: string;
   title: string;
-  hostType: string;
-  hostName: string;
-  hostAvatar: string;
-  category: string;
-  price: number;
-  rating: number;
-  reviewsCount: number;
-  images: string[];
   description: string;
-  amenities: string[];
+  ownerId: string;
+  ownerName: string;
+  ownerAvatar: string;
+  categoryId: string;
+  categoryName: string;
+  estimatedValue: number;
+  currency: string;
+  condition: ItemCondition;
+  conditionName: string;
+  status: ListingStatus;
+  brand: string;
+  exchangeWish: string;
+  cashTopUpAmount: number;
+  cashTopUpCurrency: string;
   location: string;
-  isGuestFavorite: boolean;
-  maxGuests: number;
-  isExperience: boolean;
-  dateRange: string;
+  viewCount: number;
+  favoriteCount: number;
+  images: string[];
+  createdAt: string;
+  updatedAt: string;
+  expiresAt: string;
+  rejectionReason: string | null;
+  // Legacy/compatible fields
+  hostType?: string;
+  price?: number;
+  rating?: number;
+  reviewsCount?: number;
+  amenities?: string[];
+  isGuestFavorite?: boolean;
+  maxGuests?: number;
+  isExperience?: boolean;
+  dateRange?: string;
+  category?: string;
+  imageFiles?: File[];
 }
+
+export type ItemCondition = "New" | "LikeNew" | "Good" | "Fair";
+export type ListingStatus = "Pending" | "Active" | "Rejected" | "Expired";
 
 export interface Booking {
   id: string;
@@ -41,3 +70,22 @@ export interface Review {
   rating: number;
   content: string;
 }
+
+export interface ExchangeDto {
+  proposerListingId: string;
+  receiverListingId: string;
+  message: string;
+}
+
+export interface Exchange {
+  id: string;
+  proposerListingId: string;
+  receiverListingId: string;
+  proposerId: string;
+  receiverId: string;
+  status: "Pending" | "Accepted" | "Rejected" | "Cancelled";
+  message: string;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
