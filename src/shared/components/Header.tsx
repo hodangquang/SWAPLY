@@ -1,5 +1,8 @@
 import React, { useState } from "react";
-import { Search, Globe, Menu, Sparkles, MapPin, Calendar, Users, X, Heart, ClipboardList } from "lucide-react";
+import { Search, Globe, Menu, Sparkles, MapPin, Calendar, Users, X, Heart, ClipboardList, User, MessageCircle, MessageSquare } from "lucide-react";
+import { UserSession } from "../../features/auth/hooks/useAuth";
+import { toast } from "react-toastify";
+import { useRouter } from "../../shared/context/RouterContext";
 
 interface HeaderProps {
   onSearch: (filters: { location: string; guests: number; category: string | null }) => void;
@@ -7,16 +10,39 @@ interface HeaderProps {
   onOpenDashboard: (tab: "trips" | "wishlist" | "host") => void;
   activeDashboardTab: string | null;
   resetAll: () => void;
+  currentUser: UserSession | null;
+  onOpenAuth: (tab: "login" | "register") => void;
+  onLogout: () => void;
 }
 
 export default function Header({
   onSearch,
   onOpenHostForm,
   onOpenDashboard,
-  resetAll
+  resetAll,
+  currentUser,
+  onOpenAuth,
+  onLogout
 }: HeaderProps) {
+  const { navigate } = useRouter();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
+  
+  const handleLanguageToggle = () => {
+    const currentLang = localStorage.getItem("swaply_lang") || "vi";
+    const nextLang = currentLang === "vi" ? "en" : "vi";
+    localStorage.setItem("swaply_lang", nextLang);
+    
+    if (nextLang === "en") {
+      toast.success("Switched language to English! Reloading...");
+    } else {
+      toast.success("Đã chuyển ngôn ngữ sang Tiếng Việt! Đang tải lại...");
+    }
+    
+    setTimeout(() => {
+      window.location.reload();
+    }, 1200);
+  };
   
   // Search inputs
   const [searchLocation, setSearchLocation] = useState("");
@@ -43,14 +69,14 @@ export default function Header({
       {/* Left: Logo */}
       <div 
         id="logo-container" 
-        onClick={resetAll}
+        onClick={handleClearSearch}
         className="flex items-center gap-2 cursor-pointer text-brand-coral select-none hover:opacity-90 active:scale-95 transition"
       >
         <div className="h-9 w-9 bg-brand-coral rounded-xl flex items-center justify-center shadow-md">
           <span className="text-white font-extrabold text-lg">S</span>
         </div>
         <span className="font-sans font-black tracking-tight text-2xl hidden md:inline select-none text-carbon">
-          swaply
+          SWAPLY
         </span>
       </div>
 
@@ -181,81 +207,182 @@ export default function Header({
         >
           Đăng bài đổi đồ
         </button>
-        <button className="h-9 w-9 hover:bg-fog rounded-full flex items-center justify-center text-carbon transition cursor-pointer hidden md:flex">
+        <button 
+          onClick={handleLanguageToggle}
+          className="h-9 w-9 hover:bg-fog rounded-full flex items-center justify-center text-carbon transition cursor-pointer hidden md:flex"
+          title="Đổi ngôn ngữ / Change Language"
+        >
           <Globe className="h-[18px] w-[18px] stroke-[1.5]" />
         </button>
+        {currentUser && (
+          <button 
+            onClick={() => navigate("chat")}
+            className="h-9 w-9 hover:bg-fog rounded-full flex items-center justify-center text-carbon transition cursor-pointer"
+            title="Tin nhắn / Hộp thư"
+          >
+            <MessageCircle className="h-[18px] w-[18px] stroke-[1.5]" />
+          </button>
+        )}
 
         {/* Profile Hamburger menu button */}
         <div className="relative">
           <button
             onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-            className="flex items-center gap-3 border border-mist hover:shadow-md transition-shadow cursor-pointer px-3 py-1.5 rounded-full select-none bg-cloud"
+            className="flex items-center gap-3 border border-mist hover:shadow-md transition-shadow cursor-pointer px-3 py-1.5 rounded-full select-none bg-cloud animate-in duration-200"
           >
             <Menu className="h-[16px] w-[16px] stroke-[2] text-carbon" />
-            <div className="h-8 w-8 bg-brand-coral rounded-full flex items-center justify-center text-cloud font-bold text-xs select-none">
-              Q
-            </div>
+            {currentUser ? (
+              currentUser.avatar ? (
+                <img 
+                  src={currentUser.avatar} 
+                  alt={currentUser.name} 
+                  className="h-8 w-8 rounded-full object-cover shadow-sm"
+                />
+              ) : (
+                <div className="h-8 w-8 bg-brand-coral text-white rounded-full flex items-center justify-center font-bold text-xs select-none shadow-sm">
+                  {currentUser.name.charAt(0).toUpperCase()}
+                </div>
+              )
+            ) : (
+              <div className="h-8 w-8 bg-slate/15 text-slate rounded-full flex items-center justify-center select-none">
+                <User className="h-4 w-4" />
+              </div>
+            )}
           </button>
 
           {/* Profile Dropdown Panel */}
           {profileDropdownOpen && (
-            <div className="absolute right-0 top-11 w-64 bg-cloud border border-mist shadow-[0_4px_18px_rgba(0,0,0,0.12)] rounded-xl py-2 z-50">
-              <div className="px-4 py-2 border-b border-mist">
-                <p className="font-semibold text-carbon text-sm">Chào mừng quay lại!</p>
-                <p className="text-xs text-slate truncate">quangnm@gmail.com</p>
-              </div>
+            <div className="absolute right-0 top-11 w-64 bg-cloud border border-mist shadow-[0_4px_18px_rgba(0,0,0,0.12)] rounded-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+              {currentUser ? (
+                <>
+                  <div className="px-4 py-2.5 border-b border-mist">
+                    <p className="font-semibold text-carbon text-sm">Chào, {currentUser.name}!</p>
+                    <p className="text-xs text-slate truncate font-medium">{currentUser.email}</p>
+                    {currentUser.isPremium && (
+                      <span className="inline-block mt-1 px-2 py-0.5 bg-amber-500/10 text-amber-600 rounded-md text-[9px] font-extrabold uppercase tracking-wider">
+                        Premium Member
+                      </span>
+                    )}
+                  </div>
 
-              <button
-                onClick={() => {
-                  setProfileDropdownOpen(false);
-                  onOpenDashboard("trips");
-                }}
-                className="w-full text-left px-4 py-2.5 text-sm text-carbon hover:bg-fog transition flex items-center gap-2 font-medium"
-              >
-                <ClipboardList className="h-4 w-4 text-slate" />
-                Giao dịch của tôi
-              </button>
+                  <button
+                    onClick={() => {
+                      setProfileDropdownOpen(false);
+                      onOpenDashboard("trips");
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-carbon hover:bg-fog transition flex items-center gap-2 font-medium"
+                  >
+                    <User className="h-4 w-4 text-slate" />
+                    Trang cá nhân
+                  </button>
 
-              <button
-                onClick={() => {
-                  setProfileDropdownOpen(false);
-                  onOpenDashboard("wishlist");
-                }}
-                className="w-full text-left px-4 py-2.5 text-sm text-carbon hover:bg-fog transition flex items-center gap-2 font-medium"
-              >
-                <Heart className="h-4 w-4 text-brand-coral fill-brand-coral" />
-                Danh sách yêu thích
-              </button>
+                  <button
+                    onClick={() => {
+                      setProfileDropdownOpen(false);
+                      navigate("chat");
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-carbon hover:bg-fog transition flex items-center gap-2 font-medium"
+                  >
+                    <MessageSquare className="h-4 w-4 text-slate" />
+                    Tin nhắn của tôi
+                  </button>
 
-              <button
-                onClick={() => {
-                  setProfileDropdownOpen(false);
-                  onOpenDashboard("host");
-                }}
-                className="w-full text-left px-4 py-2.5 text-sm text-carbon hover:bg-fog transition flex items-center gap-2 font-medium"
-              >
-                <Sparkles className="h-4 w-4 text-brand-coral" />
-                Bài đăng của tôi
-              </button>
+                  <button
+                    onClick={() => {
+                      setProfileDropdownOpen(false);
+                      onOpenDashboard("trips");
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-carbon hover:bg-fog transition flex items-center gap-2 font-medium"
+                  >
+                    <ClipboardList className="h-4 w-4 text-slate" />
+                    Giao dịch của tôi
+                  </button>
 
-              <div className="border-t border-mist my-1"></div>
+                  <button
+                    onClick={() => {
+                      setProfileDropdownOpen(false);
+                      onOpenDashboard("wishlist");
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-carbon hover:bg-fog transition flex items-center gap-2 font-medium"
+                  >
+                    <Heart className="h-4 w-4 text-brand-coral fill-brand-coral" />
+                    Danh sách yêu thích
+                  </button>
 
-              <button
-                onClick={() => {
-                  setProfileDropdownOpen(false);
-                  onOpenHostForm();
-                }}
-                className="w-full text-left px-4 py-2.5 text-sm text-carbon hover:bg-fog transition font-medium"
-              >
-                Đăng bài trao đổi mới
-              </button>
+                  <button
+                    onClick={() => {
+                      setProfileDropdownOpen(false);
+                      onOpenDashboard("host");
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-carbon hover:bg-fog transition flex items-center gap-2 font-medium"
+                  >
+                    <Sparkles className="h-4 w-4 text-brand-coral" />
+                    Bài đăng của tôi
+                  </button>
+
+                  <div className="border-t border-mist my-1"></div>
+
+                  <button
+                    onClick={() => {
+                      setProfileDropdownOpen(false);
+                      onOpenHostForm();
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-carbon hover:bg-fog transition font-medium"
+                  >
+                    Đăng bài trao đổi mới
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setProfileDropdownOpen(false);
+                      onLogout();
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-brand-coral hover:bg-fog transition font-semibold border-t border-mist mt-1"
+                  >
+                    Đăng xuất
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => {
+                      setProfileDropdownOpen(false);
+                      onOpenAuth("register");
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-carbon hover:bg-fog transition font-semibold"
+                  >
+                    Đăng ký tài khoản
+                  </button>
+                  <button
+                    onClick={() => {
+                      setProfileDropdownOpen(false);
+                      onOpenAuth("login");
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-slate hover:bg-fog hover:text-carbon transition font-medium"
+                  >
+                    Đăng nhập
+                  </button>
+                  
+                  <div className="border-t border-mist my-1"></div>
+
+                  <button
+                    onClick={() => {
+                      setProfileDropdownOpen(false);
+                      onOpenAuth("login");
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-slate hover:bg-fog hover:text-carbon transition font-medium"
+                  >
+                    Đăng bài trao đổi mới
+                  </button>
+                </>
+              )}
 
               <button
                 onClick={() => {
                   setProfileDropdownOpen(false);
                   resetAll();
                 }}
-                className="w-full text-left px-4 py-2.5 text-sm text-slate hover:bg-fog hover:text-carbon transition"
+                className="w-full text-left px-4 py-2.5 text-sm text-slate hover:bg-fog hover:text-carbon transition border-t border-mist/50 mt-1"
               >
                 Đặt lại toàn bộ dữ liệu
               </button>

@@ -5,13 +5,25 @@ const KEYS = {
   PROPERTIES: "swaply_properties",
   BOOKINGS: "swaply_bookings",
   WISHLIST: "swaply_wishlist",
-  MESSAGES: "swaply_messages"
+  MESSAGES: "swaply_messages",
+  USERS: "swaply_users",
+  CURRENT_USER: "swaply_current_user"
+};
+
+const DEFAULT_USER = {
+  id: "user-1",
+  name: "Nguyễn Minh Quang",
+  email: "quangnm@gmail.com",
+  password: "123456",
+  phone: "0987654321",
+  avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&h=100&q=80",
+  isPremium: true
 };
 
 export const mockDb = {
   init() {
-    if (!localStorage.getItem(KEYS.PROPERTIES)) {
-      localStorage.setItem(KEYS.PROPERTIES, JSON.stringify(INITIAL_PROPERTIES));
+    if (!localStorage.getItem(KEYS.PROPERTIES) || localStorage.getItem(KEYS.PROPERTIES) !== "[]") {
+      localStorage.setItem(KEYS.PROPERTIES, JSON.stringify([]));
     }
     if (!localStorage.getItem(KEYS.BOOKINGS)) {
       localStorage.setItem(KEYS.BOOKINGS, JSON.stringify([]));
@@ -21,6 +33,42 @@ export const mockDb = {
     }
     if (!localStorage.getItem(KEYS.MESSAGES)) {
       localStorage.setItem(KEYS.MESSAGES, JSON.stringify([]));
+    }
+    if (!localStorage.getItem(KEYS.USERS)) {
+      localStorage.setItem(KEYS.USERS, JSON.stringify([DEFAULT_USER]));
+    }
+    // CURRENT_USER starts as null. User must login manually.
+  },
+
+  getUsers(): any[] {
+    this.init();
+    try {
+      const data = localStorage.getItem(KEYS.USERS);
+      return data ? JSON.parse(data) : [DEFAULT_USER];
+    } catch {
+      return [DEFAULT_USER];
+    }
+  },
+
+  saveUsers(users: any[]) {
+    localStorage.setItem(KEYS.USERS, JSON.stringify(users));
+  },
+
+  getCurrentUser(): any {
+    this.init();
+    try {
+      const data = localStorage.getItem(KEYS.CURRENT_USER);
+      return data ? JSON.parse(data) : null;
+    } catch {
+      return null;
+    }
+  },
+
+  setCurrentUser(user: any) {
+    if (user) {
+      localStorage.setItem(KEYS.CURRENT_USER, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(KEYS.CURRENT_USER);
     }
   },
 

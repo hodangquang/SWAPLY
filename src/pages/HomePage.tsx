@@ -1,15 +1,27 @@
 import React, { useMemo } from "react";
-import { Compass, Palmtree, Home, Castle, Sparkles, Camera, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Compass,
+  Palmtree,
+  Home,
+  Castle,
+  Sparkles,
+  Camera,
+  MapPin,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { Property } from "@/types";
-import { CATEGORIES_LIST } from "@/data";
 import ListingCard from "@features/listings/components/ListingCard";
 
 interface HomePageProps {
   properties: Property[];
+  categories: { id: string; name: string }[];
   selectedCategory: string | null;
   setSelectedCategory: (cat: string | null) => void;
   searchFilters: { location: string; guests: number };
-  setSearchFilters: React.Dispatch<React.SetStateAction<{ location: string; guests: number }>>;
+  setSearchFilters: React.Dispatch<
+    React.SetStateAction<{ location: string; guests: number }>
+  >;
   wishlist: string[];
   handleWishlistToggle: (id: string) => void;
   onSelectProperty: (prop: Property) => void;
@@ -17,46 +29,78 @@ interface HomePageProps {
 
 export default function HomePage({
   properties,
+  categories = [],
   selectedCategory,
   setSelectedCategory,
   searchFilters,
   setSearchFilters,
   wishlist,
   handleWishlistToggle,
-  onSelectProperty
+  onSelectProperty,
 }: HomePageProps) {
-
   // Helper for category icons
-  const getCategoryIcon = (iconName: string, active: boolean) => {
-    const colorClass = active ? "text-brand-coral scale-110" : "text-slate group-hover:text-carbon group-hover:scale-105";
-    const iconProps = { className: `h-6 w-6 transition duration-300 ${colorClass}` };
+  const getCategoryIcon = (categoryName: string, active: boolean) => {
+    const colorClass = active
+      ? "text-brand-coral scale-110"
+      : "text-slate group-hover:text-carbon group-hover:scale-105";
+    const iconProps = {
+      className: `h-6 w-6 transition duration-300 ${colorClass}`,
+    };
 
-    switch (iconName) {
-      case "Palmtree":
-        return <Palmtree {...iconProps} />;
-      case "Cabin":
-        return <Home {...iconProps} />;
-      case "Castle":
-        return <Castle {...iconProps} />;
-      case "Compass":
-        return <Compass {...iconProps} />;
-      case "Sparkles":
-        return <Sparkles {...iconProps} />;
-      case "Camera":
-        return <Camera {...iconProps} />;
-      case "MapPin":
-        return <MapPin {...iconProps} />;
-      default:
-        return <Home {...iconProps} />;
+    const nameLower = (categoryName || "").toLowerCase();
+    if (
+      nameLower.includes("điện tử") ||
+      nameLower.includes("công nghệ") ||
+      nameLower.includes("experience")
+    ) {
+      return <Camera {...iconProps} />;
     }
+    if (
+      nameLower.includes("sách") ||
+      nameLower.includes("truyện") ||
+      nameLower.includes("memory")
+    ) {
+      return <Compass {...iconProps} />;
+    }
+    if (
+      nameLower.includes("thời trang") ||
+      nameLower.includes("quần áo") ||
+      nameLower.includes("seville")
+    ) {
+      return <Sparkles {...iconProps} />;
+    }
+    if (
+      nameLower.includes("gia dụng") ||
+      nameLower.includes("nhà cửa") ||
+      nameLower.includes("beach")
+    ) {
+      return <Home {...iconProps} />;
+    }
+    if (nameLower.includes("thể thao") || nameLower.includes("cabin")) {
+      return <Palmtree {...iconProps} />;
+    }
+    if (
+      nameLower.includes("giải trí") ||
+      nameLower.includes("game") ||
+      nameLower.includes("mansion")
+    ) {
+      return <Castle {...iconProps} />;
+    }
+    return <Home {...iconProps} />;
   };
 
   // Filter calculations
   const filteredProperties = useMemo(() => {
     return properties.filter((prop) => {
-      // 1. Category Pill Filter
-      if (selectedCategory && prop.category !== selectedCategory) {
-        return false;
+      if (selectedCategory) {
+        const selectedName = selectedCategory.trim().toLowerCase();
+        const propCategory = (prop.category || "").trim().toLowerCase();
+        const propCategoryId = (prop.categoryId || "").trim().toLowerCase();
+        const categoryMatch =
+          propCategory === selectedName || propCategoryId === selectedName;
+        if (!categoryMatch) {
+          return false;
+        }
       }
 
       // 2. Search location
@@ -76,18 +120,23 @@ export default function HomePage({
     });
   }, [properties, selectedCategory, searchFilters]);
 
-  // Categorized listings
-  const experienceListings = useMemo(() => {
-    return filteredProperties.filter(p => p.category === "experiences");
-  }, [filteredProperties]);
-
-  const memoryListings = useMemo(() => {
-    return filteredProperties.filter(p => p.category === "memories");
-  }, [filteredProperties]);
-
-  const sevilleListings = useMemo(() => {
-    return filteredProperties.filter(p => p.category === "seville");
-  }, [filteredProperties]);
+  const categorySections = useMemo(() => {
+    return categories
+      .map((cat) => ({
+        ...cat,
+        listings: filteredProperties.filter((prop) => {
+          const propCategory = (prop.category || "").trim().toLowerCase();
+          const propCategoryId = (prop.categoryId || "").trim().toLowerCase();
+          const catName = (cat.name || "").trim().toLowerCase();
+          return (
+            propCategory === catName ||
+            propCategoryId === catName ||
+            propCategoryId === cat.id.toLowerCase()
+          );
+        }),
+      }))
+      .filter((section) => section.listings.length > 0);
+  }, [categories, filteredProperties]);
 
   const handleScrollRow = (rowId: string, direction: "left" | "right") => {
     const el = document.getElementById(rowId);
@@ -95,7 +144,7 @@ export default function HomePage({
       const scrollAmount = 400;
       el.scrollBy({
         left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth"
+        behavior: "smooth",
       });
     }
   };
@@ -109,27 +158,33 @@ export default function HomePage({
         <div className="flex items-center gap-6 overflow-x-auto no-scrollbar py-0.5 select-none w-full justify-start md:justify-center">
           <button
             onClick={() => setSelectedCategory(null)}
-            className={`group flex flex-col items-center gap-1.5 cursor-pointer pb-1.5 transition outline-none ${selectedCategory === null
+            className={`group flex flex-col items-center gap-1.5 cursor-pointer pb-1.5 transition outline-none ${
+              selectedCategory === null
                 ? "border-b-2 border-carbon text-carbon font-semibold"
                 : "text-slate hover:text-carbon"
-              }`}
+            }`}
           >
-            <Compass className={`h-6 w-6 transition duration-300 ${selectedCategory === null ? "text-brand-coral scale-110" : "text-slate"}`} />
+            <Compass
+              className={`h-6 w-6 transition duration-300 ${selectedCategory === null ? "text-brand-coral scale-110" : "text-slate"}`}
+            />
             <span className="text-[11px] tracking-wide">Tất cả sản phẩm</span>
           </button>
 
-          {CATEGORIES_LIST.map((cat) => {
-            const isActive = selectedCategory === cat.name;
+          {categories.map((cat) => {
+            const isActive =
+              selectedCategory?.trim().toLowerCase() ===
+              cat.name.trim().toLowerCase();
             return (
               <button
-                key={cat.name}
+                key={cat.id}
                 onClick={() => setSelectedCategory(cat.name)}
-                className={`group flex flex-col items-center gap-1.5 cursor-pointer pb-1.5 transition outline-none ${isActive
+                className={`group flex flex-col items-center gap-1.5 cursor-pointer pb-1.5 transition outline-none ${
+                  isActive
                     ? "border-b-2 border-carbon text-carbon font-semibold"
                     : "text-slate hover:text-carbon"
-                  }`}
+                }`}
               >
-                {getCategoryIcon(cat.icon, isActive)}
+                {getCategoryIcon(cat.name, isActive)}
                 <span className="text-[11px] tracking-wide">{cat.name}</span>
               </button>
             );
@@ -140,26 +195,58 @@ export default function HomePage({
       {/* Main Content Arena */}
       <main className="flex-1 w-full max-w-[1760px] mx-auto px-6 md:px-12 xl:px-24 py-10 space-y-12">
         {/* Dynamic Search & Category Badges Banner */}
-        {(selectedCategory || searchFilters.location || searchFilters.guests > 1) && (
+        {(selectedCategory ||
+          searchFilters.location ||
+          searchFilters.guests > 1) && (
           <div className="flex flex-wrap items-center justify-between gap-3 bg-cloud border border-mist p-4 rounded-2xl shadow-xs">
             <div className="flex flex-wrap items-center gap-2 text-sm text-slate">
-              <span className="font-semibold text-carbon">Bộ lọc đang hoạt động:</span>
+              <span className="font-semibold text-carbon">
+                Bộ lọc đang hoạt động:
+              </span>
               {selectedCategory && (
                 <span className="bg-fog text-carbon px-3 py-1 rounded-full text-xs font-medium border border-mist flex items-center gap-1">
-                  Danh mục: <strong className="text-brand-coral capitalize">{selectedCategory}</strong>
-                  <button onClick={() => setSelectedCategory(null)} className="hover:text-brand-coral font-bold ml-1">×</button>
+                  Danh mục:{" "}
+                  <strong className="text-brand-coral capitalize">
+                    {selectedCategory}
+                  </strong>
+                  <button
+                    onClick={() => setSelectedCategory(null)}
+                    className="hover:text-brand-coral font-bold ml-1"
+                  >
+                    ×
+                  </button>
                 </span>
               )}
               {searchFilters.location && (
                 <span className="bg-fog text-carbon px-3 py-1 rounded-full text-xs font-medium border border-mist flex items-center gap-1">
-                  Khu vực: <strong className="text-brand-coral">{searchFilters.location}</strong>
-                  <button onClick={() => setSearchFilters(prev => ({ ...prev, location: "" }))} className="hover:text-brand-coral font-bold ml-1">×</button>
+                  Khu vực:{" "}
+                  <strong className="text-brand-coral">
+                    {searchFilters.location}
+                  </strong>
+                  <button
+                    onClick={() =>
+                      setSearchFilters((prev) => ({ ...prev, location: "" }))
+                    }
+                    className="hover:text-brand-coral font-bold ml-1"
+                  >
+                    ×
+                  </button>
                 </span>
               )}
               {searchFilters.guests > 1 && (
                 <span className="bg-fog text-carbon px-3 py-1 rounded-full text-xs font-medium border border-mist flex items-center gap-1">
-                  Bù thêm tối đa: <strong className="text-brand-coral">{searchFilters.guests * 500}.000đ</strong>
-                  <button onClick={() => setSearchFilters(prev => ({ ...prev, guests: 1 }))} className="hover:text-brand-coral font-bold ml-1">×</button>
+                  Bù thêm tối đa:{" "}
+                  <strong className="text-brand-coral">
+                    {searchFilters.guests * 500}.000đ
+                  </strong>
+                  <button
+                    onClick={() =>
+                      setSearchFilters((prev) => ({ ...prev, guests: 1 }))
+                    }
+                    className="hover:text-brand-coral font-bold ml-1"
+                  >
+                    ×
+                  </button>
                 </span>
               )}
             </div>
@@ -178,22 +265,25 @@ export default function HomePage({
         {/* 1. LAYOUT DEFAULT: Carousels per Section */}
         {isBrowsingAll ? (
           <div className="space-y-12">
-            {/* ROW 1: Đồ điện tử nổi bật */}
-            {experienceListings.length > 0 && (
-              <section className="space-y-4">
+            {categorySections.map((section) => (
+              <section key={section.id} className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg md:text-xl font-bold text-carbon tracking-tight font-sans">
-                    Đồ điện tử nổi bật
+                    {section.name}
                   </h2>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => handleScrollRow("row-experiences", "left")}
+                      onClick={() =>
+                        handleScrollRow(`row-${section.id}`, "left")
+                      }
                       className="h-8 w-8 rounded-full border border-mist bg-cloud hover:bg-fog active:scale-95 flex items-center justify-center text-carbon shadow-md transition"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => handleScrollRow("row-experiences", "right")}
+                      onClick={() =>
+                        handleScrollRow(`row-${section.id}`, "right")
+                      }
                       className="h-8 w-8 rounded-full border border-mist bg-cloud hover:bg-fog active:scale-95 flex items-center justify-center text-carbon shadow-md transition"
                     >
                       <ChevronRight className="h-4 w-4" />
@@ -201,8 +291,11 @@ export default function HomePage({
                   </div>
                 </div>
 
-                <div id="row-experiences" className="flex gap-4 overflow-x-auto no-scrollbar scroll-smooth pb-3 snap-x">
-                  {experienceListings.map((prop) => (
+                <div
+                  id={`row-${section.id}`}
+                  className="flex gap-4 overflow-x-auto no-scrollbar scroll-smooth pb-3 snap-x"
+                >
+                  {section.listings.map((prop) => (
                     <ListingCard
                       key={prop.id}
                       property={prop}
@@ -216,90 +309,15 @@ export default function HomePage({
                   ))}
                 </div>
               </section>
-            )}
-
-            {/* ROW 2: Sách & Truyện chọn lọc */}
-            {memoryListings.length > 0 && (
-              <section className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg md:text-xl font-bold text-carbon tracking-tight font-sans">
-                    Sách và Truyện chọn lọc
-                  </h2>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleScrollRow("row-memories", "left")}
-                      className="h-8 w-8 rounded-full border border-mist bg-cloud hover:bg-fog active:scale-95 flex items-center justify-center text-carbon shadow-md transition"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => handleScrollRow("row-memories", "right")}
-                      className="h-8 w-8 rounded-full border border-mist bg-cloud hover:bg-fog active:scale-95 flex items-center justify-center text-carbon shadow-md transition"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div id="row-memories" className="flex gap-4 overflow-x-auto no-scrollbar scroll-smooth pb-3 snap-x">
-                  {memoryListings.map((prop) => (
-                    <ListingCard
-                      key={prop.id}
-                      property={prop}
-                      isWishlisted={wishlist.includes(prop.id)}
-                      onWishlistToggle={(e) => {
-                        e.stopPropagation();
-                        handleWishlistToggle(prop.id);
-                      }}
-                      onClick={() => onSelectProperty(prop)}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* ROW 3: Thời trang & Phụ kiện */}
-            {sevilleListings.length > 0 && (
-              <section className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg md:text-xl font-bold text-carbon tracking-tight font-sans">
-                    Thời trang và Phụ kiện
-                  </h2>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleScrollRow("row-seville", "left")}
-                      className="h-8 w-8 rounded-full border border-mist bg-cloud hover:bg-fog active:scale-95 flex items-center justify-center text-carbon shadow-md transition"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => handleScrollRow("row-seville", "right")}
-                      className="h-8 w-8 rounded-full border border-mist bg-cloud hover:bg-fog active:scale-95 flex items-center justify-center text-carbon shadow-md transition"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div id="row-seville" className="flex gap-4 overflow-x-auto no-scrollbar scroll-smooth pb-3 snap-x">
-                  {sevilleListings.map((prop) => (
-                    <ListingCard
-                      key={prop.id}
-                      property={prop}
-                      isWishlisted={wishlist.includes(prop.id)}
-                      onWishlistToggle={(e) => {
-                        e.stopPropagation();
-                        handleWishlistToggle(prop.id);
-                      }}
-                      onClick={() => onSelectProperty(prop)}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
+            ))}
 
             {/* FALLBACK */}
-            {properties.some(p => p.category === "Beach" || p.category === "Cabins" || p.category === "Mansions") && (
+            {properties.some(
+              (p) =>
+                p.category === "Beach" ||
+                p.category === "Cabins" ||
+                p.category === "Mansions",
+            ) && (
               <section className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg md:text-xl font-bold text-carbon tracking-tight font-sans">
@@ -308,7 +326,9 @@ export default function HomePage({
                 </div>
                 <div className="flex gap-4 overflow-x-auto no-scrollbar pb-3 snap-x">
                   {properties
-                    .filter(p => ["Beach", "Cabins", "Mansions"].includes(p.category))
+                    .filter((p) =>
+                      ["Beach", "Cabins", "Mansions"].includes(p.category),
+                    )
                     .map((prop) => (
                       <ListingCard
                         key={prop.id}
@@ -333,7 +353,10 @@ export default function HomePage({
             </h2>
             {filteredProperties.length === 0 ? (
               <div className="bg-cloud border border-mist p-12 text-center rounded-2xl space-y-4">
-                <p className="text-slate text-sm">Không tìm thấy sản phẩm nào khớp với tiêu chí của bạn. Hãy thử thay đổi bộ lọc.</p>
+                <p className="text-slate text-sm">
+                  Không tìm thấy sản phẩm nào khớp với tiêu chí của bạn. Hãy thử
+                  thay đổi bộ lọc.
+                </p>
                 <button
                   onClick={() => {
                     setSelectedCategory(null);
@@ -369,15 +392,28 @@ export default function HomePage({
         <div className="max-w-[1760px] mx-auto grid grid-cols-1 sm:grid-cols-3 gap-6 text-center sm:text-left">
           <div className="space-y-1">
             <h4 className="font-bold text-carbon text-sm">Hỗ trợ 24/7</h4>
-            <p className="text-xs text-slate font-sans leading-relaxed">Đội ngũ hỗ trợ của SWAPLY luôn sẵn sàng giải đáp mọi thắc mắc và hỗ trợ bạn giao dịch nhanh chóng.</p>
+            <p className="text-xs text-slate font-sans leading-relaxed">
+              Đội ngũ hỗ trợ của SWAPLY luôn sẵn sàng giải đáp mọi thắc mắc và
+              hỗ trợ bạn giao dịch nhanh chóng.
+            </p>
           </div>
           <div className="space-y-1">
-            <h4 className="font-bold text-carbon text-sm">Bảo đảm quyền lợi trao đổi</h4>
-            <p className="text-xs text-slate font-sans leading-relaxed">Các giao dịch trao đổi đều được giám sát để đảm bảo tính an toàn, công bằng và hoàn toàn minh bạch.</p>
+            <h4 className="font-bold text-carbon text-sm">
+              Bảo đảm quyền lợi trao đổi
+            </h4>
+            <p className="text-xs text-slate font-sans leading-relaxed">
+              Các giao dịch trao đổi đều được giám sát để đảm bảo tính an toàn,
+              công bằng và hoàn toàn minh bạch.
+            </p>
           </div>
           <div className="space-y-1">
-            <h4 className="font-bold text-carbon text-sm">Chủ đồ đã được xác minh</h4>
-            <p className="text-xs text-slate font-sans leading-relaxed">Mọi tài khoản đăng tin đều được kiểm duyệt thông tin số điện thoại và hiển thị điểm uy tín rõ ràng.</p>
+            <h4 className="font-bold text-carbon text-sm">
+              Chủ đồ đã được xác minh
+            </h4>
+            <p className="text-xs text-slate font-sans leading-relaxed">
+              Mọi tài khoản đăng tin đều được kiểm duyệt thông tin số điện thoại
+              và hiển thị điểm uy tín rõ ràng.
+            </p>
           </div>
         </div>
       </section>
