@@ -43,7 +43,7 @@ export default function ListingDetailPage({
   // State for API data
   const [property, setProperty] = useState<Property | null>(initialProperty || null);
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [ownerRating, setOwnerRating] = useState<{ rating: number; count: number }>({ rating: 4.8, count: 0 });
+  const [ownerRating, setOwnerRating] = useState<{ rating: number; count: number }>({ rating: 5.0, count: 0 });
   const [loading, setLoading] = useState(!initialProperty);
   const [error, setError] = useState<string | null>(null);
   
@@ -332,7 +332,7 @@ export default function ListingDetailPage({
         const ratingData = await apiClient.getUserRating(property.ownerId);
         if (ratingData) {
           setOwnerRating({
-            rating: ratingData.rating || 4.8,
+            rating: ratingData.count > 0 ? ratingData.rating : 5.0,
             count: ratingData.count || 0
           });
         }
@@ -677,12 +677,6 @@ export default function ListingDetailPage({
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-3 text-sm text-carbon font-medium">
-              <div className="flex items-center gap-1">
-                <Star className="h-4 w-4 fill-carbon text-carbon" />
-                <span>{ownerRating.rating?.toFixed(2) || "4.8"}</span>
-                <span className="text-slate font-normal">({ownerRating.count || reviews.length || 0} đánh giá)</span>
-              </div>
-              <span>•</span>
               <span className="text-slate flex items-center gap-1 font-normal">
                 <MapPin className="h-4 w-4 text-slate" /> {property.location}
               </span>
@@ -813,10 +807,8 @@ export default function ListingDetailPage({
 
               {/* Reviews */}
               <div className="space-y-4">
-                <h3 className="text-base font-bold text-carbon flex items-center gap-1.5">
-                  <Star className="h-5 w-5 fill-carbon text-carbon" />
-                  <span>{ownerRating.rating?.toFixed(2) || "4.8"}</span>
-                  <span className="text-slate text-xs font-normal">({ownerRating.count || reviews.length || 0} đánh giá)</span>
+                <h3 className="text-base font-bold text-carbon">
+                  Đánh giá ({ownerRating.count || reviews.length || 0})
                 </h3>
                 {reviews.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -859,10 +851,6 @@ export default function ListingDetailPage({
                       / giá trị ước tính
                     </span>
                   </p>
-                  <span className="text-slate text-xs flex items-center gap-1 font-medium">
-                    <Star className="h-3.5 w-3.5 fill-carbon text-carbon" />
-                    {ownerRating.rating?.toFixed(2) || "4.8"} ({ownerRating.count || reviews.length || 0})
-                  </span>
                 </div>
 
                 {currentUser && property.ownerId?.toLowerCase() === currentUser.id?.toLowerCase() ? (

@@ -109,6 +109,10 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
   const [isCategoryDetailOpen, setIsCategoryDetailOpen] = useState(false);
   const [selectedCategoryDetail, setSelectedCategoryDetail] = useState<Category | null>(null);
 
+  // Listing Detail Modal State
+  const [isListingDetailOpen, setIsListingDetailOpen] = useState(false);
+  const [selectedListingDetail, setSelectedListingDetail] = useState<Property | null>(null);
+
   // Notification center simulator
   const [notifications, setNotifications] = useState([
     { id: 1, title: "Đề xuất trao đổi mới", desc: "User quangnm vừa gửi đề xuất trao đổi đồ.", time: "5 phút trước", read: false },
@@ -333,7 +337,7 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
     setUsersList(updated);
     localStorage.setItem("swaply_users", JSON.stringify(updated));
     toast.success("Tạo tài khoản thành viên thành công!");
-    
+
     // Clear forms
     setNewUserName("");
     setNewUserUsername("");
@@ -395,7 +399,7 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
       localStorage.setItem("swaply_users", JSON.stringify(updated));
     } catch (err: any) {
       toast.error(err.message || "Thao tác thay đổi trạng thái khóa thất bại.");
-      
+
       // Fallback local update
       const nextStatus = isCurrentlyActive ? "Blocked" : "Active";
       const updated = usersList.map((u) => {
@@ -563,11 +567,28 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
     }
   };
 
+  const handleViewListingDetail = async (id: string) => {
+    setIsLoading(true);
+    try {
+      const detail = await apiClient.fetchAdminListingById(id);
+      if (detail) {
+        setSelectedListingDetail(detail);
+        setIsListingDetailOpen(true);
+      } else {
+        toast.error("Không tìm thấy thông tin chi tiết của tin đăng này.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Tải chi tiết tin đăng thất bại.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Helper lists categories
   const categoryRows = useMemo(() => {
     const list: Category[] = [];
     const seen = new Set<string>();
-    
+
     backendCategories.forEach((c) => {
       const nameKey = c.name.trim().toLowerCase();
       if (!seen.has(nameKey)) {
@@ -595,7 +616,7 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
         user.email?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
         user.username?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
         user.id?.toLowerCase().includes(userSearchQuery.toLowerCase());
-      
+
       const matchesRole = userRoleFilter === "all" || user.role === userRoleFilter;
       const matchesStatus = userStatusFilter === "all" || user.status === userStatusFilter;
 
@@ -605,7 +626,7 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
 
   // Filter listings
   const filteredListings = useMemo(() => {
-    return pendingListings.filter((listing) => 
+    return pendingListings.filter((listing) =>
       listing.title?.toLowerCase().includes(listingSearchQuery.toLowerCase()) ||
       listing.ownerName?.toLowerCase().includes(listingSearchQuery.toLowerCase())
     );
@@ -615,7 +636,7 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
   const totalUserCount = usersList.length;
   const activeListingsCount = properties.filter((p) => p.status === "Active" || p.status === "Approved").length;
   const pendingRequestsCount = pendingListings.length;
-  
+
   const totalMarketValue = useMemo(() => {
     return properties.reduce((sum, p) => sum + (p.estimatedValue || p.price || 0), 0);
   }, [properties]);
@@ -682,7 +703,7 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
 
   const recentSystemActivities = useMemo(() => {
     const list = [];
-    
+
     if (pendingRequestsCount > 0) {
       list.push({
         icon: AlertCircle,
@@ -735,11 +756,11 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
         <div className="absolute bottom-[-20%] right-[-20%] w-[60%] aspect-square bg-[#FF4D6D]/5 rounded-full blur-[120px]" />
 
         <div className="w-full max-w-[1100px] bg-white border border-[#EAEAEA] shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[32px] overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[600px] animate-in fade-in duration-300">
-          
+
           {/* Left panel: branding branding */}
           <div className="lg:col-span-5 bg-[#FF4D6D] p-12 text-white flex flex-col justify-between relative overflow-hidden">
             <div className="absolute top-0 right-0 w-[150%] aspect-square bg-white/5 rounded-full translate-x-[20%] translate-y-[-20%] pointer-events-none" />
-            
+
             <div className="flex items-center gap-2.5 z-10">
               <div className="h-10 w-10 bg-white text-[#FF4D6D] rounded-xl flex items-center justify-center font-sans font-black text-xl shadow-md">
                 S
@@ -847,11 +868,10 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-semibold tracking-wide transition relative group cursor-pointer ${
-                    isActive
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-semibold tracking-wide transition relative group cursor-pointer ${isActive
                       ? "bg-[#FF4D6D]/10 text-[#FF4D6D]"
                       : "text-[#6B7280] hover:text-[#1F2937] hover:bg-gray-50"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     <Icon className={`h-4.5 w-4.5 ${isActive ? "text-[#FF4D6D]" : "text-[#6B7280] group-hover:text-[#1F2937]"}`} />
@@ -949,9 +969,9 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
                 <div className="absolute right-0 top-12 w-80 bg-white border border-[#EAEAEA] shadow-xl rounded-2xl py-3 z-50 animate-in fade-in slide-in-from-top-2 duration-150 text-left">
                   <div className="px-4 pb-2 border-b border-[#EAEAEA] flex items-center justify-between">
                     <span className="font-bold text-xs text-[#1F2937]">Thông báo hệ thống</span>
-                    <button 
+                    <button
                       onClick={() => {
-                        setNotifications(prev => prev.map(n => ({...n, read: true})));
+                        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
                         toast.success("Đã đọc tất cả thông báo.");
                       }}
                       className="text-[10px] text-[#FF4D6D] hover:underline font-semibold"
@@ -990,11 +1010,11 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
 
         {/* 3. Render Dashboard Tabs depending on activeTab */}
         <div className="p-8 space-y-8 flex-1">
-          
+
           {/* TAB 1: DASHBOARD TAB OVERVIEW */}
           {activeTab === "dashboard" && (
             <div className="space-y-8 animate-in fade-in duration-300">
-              
+
               {/* Header Title Title */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
@@ -1002,7 +1022,7 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
                   <p className="text-[#6B7280] text-xs">Theo dõi thời gian thực các chỉ số đo lường hiệu suất hoạt động của hệ thống.</p>
                 </div>
                 <div className="flex gap-2">
-                  <button 
+                  <button
                     onClick={async () => {
                       setIsLoading(true);
                       await onReloadData();
@@ -1032,7 +1052,7 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
                     <RefreshCw className="h-3.5 w-3.5 text-[#6B7280]" />
                     <span>Làm mới</span>
                   </button>
-                  <button 
+                  <button
                     onClick={() => toast.success("Đang xuất báo cáo PDF...")}
                     className="flex items-center gap-2 bg-[#FF4D6D] hover:bg-[#FF335C] text-white font-bold text-xs py-2.5 px-4 rounded-xl transition cursor-pointer shadow-md"
                   >
@@ -1059,9 +1079,8 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
                         <div className="h-9 w-9 rounded-xl bg-[#FF4D6D]/10 text-[#FF4D6D] flex items-center justify-center shadow-xs">
                           <StatIcon className="h-4.5 w-4.5" />
                         </div>
-                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-0.5 ${
-                          stat.up ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
-                        }`}>
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-0.5 ${stat.up ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
+                          }`}>
                           {stat.up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                           {stat.trend}
                         </span>
@@ -1078,7 +1097,7 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
 
               {/* Graphical Charts Section */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                
+
                 {/* 1. Exchange Activity Line Chart (16/9 Area Chart) */}
                 <div className="lg:col-span-8 bg-white border border-[#EAEAEA] rounded-[24px] p-6 shadow-xs text-left space-y-4">
                   <div className="flex justify-between items-center">
@@ -1143,7 +1162,7 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
                           <span className="text-slate">{cat.count} tin ({cat.percent}%)</span>
                         </div>
                         <div className="h-2 w-full bg-[#FAFAFA] rounded-full overflow-hidden border border-[#EAEAEA]">
-                          <div 
+                          <div
                             className="h-full rounded-full transition-all duration-1000"
                             style={{ width: `${cat.percent}%`, backgroundColor: cat.color }}
                           />
@@ -1181,7 +1200,7 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
                 <div className="bg-white border border-[#EAEAEA] rounded-[24px] p-6 shadow-xs space-y-4">
                   <div className="flex justify-between items-center">
                     <h3 className="font-bold text-sm text-[#1F2937]">Thành viên mới</h3>
-                    <button 
+                    <button
                       onClick={() => setActiveTab("users")}
                       className="text-[11px] text-[#FF4D6D] hover:underline font-bold"
                     >
@@ -1215,7 +1234,7 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
           {/* TAB 2: MEMBERS MANAGEMENT PANEL */}
           {activeTab === "users" && (
             <div className="bg-white border border-[#EAEAEA] rounded-[24px] shadow-xs text-left animate-in fade-in duration-300">
-              
+
               {/* Header Title toolbar */}
               <div className="px-6 py-5 border-b border-[#EAEAEA] flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
@@ -1272,7 +1291,7 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <button 
+                  <button
                     onClick={async () => {
                       setUserSearchQuery("");
                       setUserRoleFilter("all");
@@ -1297,7 +1316,7 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
                   >
                     <RefreshCw className="h-4 w-4" />
                   </button>
-                  <button 
+                  <button
                     onClick={() => toast.success("Đang xuất tập tin Excel thành viên...")}
                     className="flex items-center gap-1.5 border border-[#EAEAEA] hover:bg-gray-50 text-[#1F2937] text-xs font-semibold px-3 py-2 rounded-xl transition cursor-pointer"
                   >
@@ -1346,16 +1365,14 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
                               <span className="block">{user.email}</span>
                             </td>
                             <td className="p-4">
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                                isAdmin ? "bg-purple-50 text-purple-600 border-purple-100" : "bg-blue-50 text-blue-600 border-blue-100"
-                              }`}>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${isAdmin ? "bg-purple-50 text-purple-600 border-purple-100" : "bg-blue-50 text-blue-600 border-blue-100"
+                                }`}>
                                 {user.role}
                               </span>
                             </td>
                             <td className="p-4">
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                                isActive ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-rose-50 text-rose-600 border-rose-100"
-                              }`}>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${isActive ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-rose-50 text-rose-600 border-rose-100"
+                                }`}>
                                 {isActive ? "Hoạt động" : "Bị khóa"}
                               </span>
                             </td>
@@ -1388,9 +1405,8 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
                                 </button>
                                 <button
                                   onClick={() => handleToggleUserStatus(user.id)}
-                                  className={`p-2 border rounded-xl transition cursor-pointer ${
-                                    isActive ? "bg-amber-50 border-amber-100 text-amber-600 hover:bg-amber-100" : "bg-emerald-50 border-emerald-100 text-emerald-600 hover:bg-emerald-100"
-                                  }`}
+                                  className={`p-2 border rounded-xl transition cursor-pointer ${isActive ? "bg-amber-50 border-amber-100 text-amber-600 hover:bg-amber-100" : "bg-emerald-50 border-emerald-100 text-emerald-600 hover:bg-emerald-100"
+                                    }`}
                                   title={isActive ? "Khóa tài khoản" : "Kích hoạt tài khoản"}
                                 >
                                   {isActive ? <Ban className="h-3.5 w-3.5" /> : <UserCheck className="h-3.5 w-3.5" />}
@@ -1439,7 +1455,7 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
                     className="w-full bg-white border border-[#EAEAEA] rounded-xl py-2 pl-9 pr-4 text-xs text-[#1F2937] outline-none focus:border-[#FF4D6D] transition"
                   />
                 </div>
-                <button 
+                <button
                   onClick={async () => {
                     setIsLoading(true);
                     await onReloadData();
@@ -1497,6 +1513,13 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
                           <td className="p-4">
                             <div className="flex items-center justify-center gap-2">
                               <button
+                                onClick={() => handleViewListingDetail(prop.id)}
+                                className="p-2 border border-[#EAEAEA] hover:border-slate hover:bg-gray-50 text-[#6B7280] rounded-xl transition cursor-pointer"
+                                title="Xem chi tiết"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </button>
+                              <button
                                 onClick={() => handleUpdateStatus(prop.id, "Active")}
                                 className="p-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 text-emerald-600 rounded-xl transition cursor-pointer"
                                 title="Phê duyệt cho hiển thị"
@@ -1531,7 +1554,7 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
           {/* TAB 4: CATEGORY PANEL */}
           {activeTab === "categories" && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-left animate-in fade-in duration-300">
-              
+
               {/* Left Column: Create new Category form */}
               <div className="lg:col-span-4 bg-white border border-[#EAEAEA] rounded-[24px] p-6 shadow-xs h-fit space-y-5">
                 <div className="flex items-center gap-3">
@@ -2063,6 +2086,99 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
             >
               Đóng chi tiết
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Listing Detail View Modal */}
+      {isListingDetailOpen && selectedListingDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-[600px] bg-white border border-[#EAEAEA] shadow-2xl rounded-3xl p-6 space-y-5 text-left animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="font-black text-base text-[#1F2937] line-clamp-2">{selectedListingDetail.title}</h3>
+                <p className="text-[10px] text-[#6B7280] font-mono mt-1">Mã tin đăng: {selectedListingDetail.id}</p>
+              </div>
+              <span className="px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100 font-bold text-[10px] uppercase shrink-0">
+                Chờ duyệt
+              </span>
+            </div>
+
+            {selectedListingDetail.images && selectedListingDetail.images.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto py-1 no-scrollbar">
+                {selectedListingDetail.images.map((img, idx) => (
+                  <img
+                    key={idx}
+                    src={img}
+                    alt={selectedListingDetail.title}
+                    className="h-28 w-28 rounded-xl object-cover border border-[#EAEAEA] shrink-0 bg-gray-50"
+                    onError={(e) => {
+                      (e.target as any).src = "https://images.unsplash.com/photo-1594122230689-486b7d986d4c?w=150";
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              <div className="bg-[#FAFAFA] border border-[#EAEAEA] p-3 rounded-xl">
+                <span className="block text-[9px] font-bold text-[#6B7280] uppercase tracking-wider mb-1">Người đăng</span>
+                <p className="font-bold text-[#1F2937]">{selectedListingDetail.ownerName || "Không rõ"}</p>
+              </div>
+              <div className="bg-[#FAFAFA] border border-[#EAEAEA] p-3 rounded-xl">
+                <span className="block text-[9px] font-bold text-[#6B7280] uppercase tracking-wider mb-1">Danh mục</span>
+                <p className="font-bold text-[#1F2937]">{selectedListingDetail.categoryName || selectedListingDetail.category || "Không rõ"}</p>
+              </div>
+              <div className="bg-[#FAFAFA] border border-[#EAEAEA] p-3 rounded-xl">
+                <span className="block text-[9px] font-bold text-[#6B7280] uppercase tracking-wider mb-1">Giá trị ước lượng</span>
+                <p className="font-bold text-emerald-600">{(selectedListingDetail.estimatedValue || selectedListingDetail.price || 0).toLocaleString("vi-VN")} đ</p>
+              </div>
+              <div className="bg-[#FAFAFA] border border-[#EAEAEA] p-3 rounded-xl">
+                <span className="block text-[9px] font-bold text-[#6B7280] uppercase tracking-wider mb-1">Khu vực</span>
+                <p className="font-bold text-[#1F2937]">{selectedListingDetail.location || "Chưa cập nhật"}</p>
+              </div>
+            </div>
+
+            <div className="bg-[#FAFAFA] border border-[#EAEAEA] p-3 rounded-xl text-xs space-y-1">
+              <span className="block text-[9px] font-bold text-[#6B7280] uppercase tracking-wider mb-1">Mô tả chi tiết</span>
+              <p className="text-[#1F2937] leading-relaxed whitespace-pre-wrap">{selectedListingDetail.description || "Không có mô tả."}</p>
+            </div>
+
+            {selectedListingDetail.amenities && selectedListingDetail.amenities.length > 0 && (
+              <div className="bg-[#FAFAFA] border border-[#EAEAEA] p-3 rounded-xl text-xs space-y-1">
+                <span className="block text-[9px] font-bold text-[#6B7280] uppercase tracking-wider mb-1">Tiện ích / Tình trạng</span>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {selectedListingDetail.amenities.map((item, idx) => (
+                    <span key={idx} className="bg-white border border-[#EAEAEA] px-2 py-0.5 rounded text-[10px] text-[#1F2937] font-medium">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => {
+                  setIsListingDetailOpen(false);
+                  setSelectedListingDetail(null);
+                }}
+                className="flex-1 border border-[#EAEAEA] hover:bg-gray-50 text-[#1F2937] font-bold py-2.5 rounded-xl text-xs transition cursor-pointer text-center"
+              >
+                Đóng
+              </button>
+              <button
+                onClick={() => {
+                  const id = selectedListingDetail.id;
+                  setIsListingDetailOpen(false);
+                  setSelectedListingDetail(null);
+                  handleUpdateStatus(id, "Active");
+                }}
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs transition cursor-pointer text-center"
+              >
+                Phê duyệt
+              </button>
+            </div>
           </div>
         </div>
       )}

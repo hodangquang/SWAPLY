@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Star, Heart, ClipboardList, Home, Calendar, Users, Trash2, Shield, Award, Sparkles, X, Loader2, User, ArrowRightLeft } from "lucide-react";
+import { Star, Heart, ClipboardList, Home, Calendar, Users, Trash2, Shield, Award, Sparkles, X, Loader2, User, ArrowRightLeft, Pencil } from "lucide-react";
 import { Property, Booking } from "@/types";
 import { toast } from "react-toastify";
 import { fetchIncomingExchanges, acceptExchange, rejectExchange } from "@/shared/api/exchangeApi";
+import { apiClient } from "@shared/api/apiClient";
 
 interface ProfilePageProps {
   currentUser: { id: string; name: string; email: string; avatar: string; isPremium: boolean; phone?: string; createdAt?: string };
@@ -75,6 +76,88 @@ export default function ProfilePage({
       toast.error("Không thể kết nối đến máy chủ.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // Categories list state
+  const [categories, setCategories] = useState<any[]>([]);
+
+  // Listing Edit States
+  const [isEditingListing, setIsEditingListing] = useState(false);
+  const [listingToEdit, setListingToEdit] = useState<Property | null>(null);
+
+  const [editTitle, setEditTitle] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [editPrice, setEditPrice] = useState(0);
+  const [editLocation, setEditLocation] = useState("");
+  const [editCategoryId, setEditCategoryId] = useState("");
+  const [editCondition, setEditCondition] = useState("New");
+  const [editBrand, setEditBrand] = useState("");
+  const [editExchangeWish, setEditExchangeWish] = useState("");
+  const [editCashTopUpAmount, setEditCashTopUpAmount] = useState(0);
+  const [isSavingListing, setIsSavingListing] = useState(false);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const cats = await apiClient.fetchCategories();
+        setCategories(cats);
+      } catch (e) {
+        console.error("Failed to load categories in ProfilePage:", e);
+      }
+    };
+    loadCategories();
+  }, []);
+
+  const handleOpenEditListing = (prop: Property) => {
+    if (prop.status && prop.status !== "Pending" && prop.status !== "Rejected") {
+      toast.error("Chỉ có thể chỉnh sửa tin đăng ở trạng thái chưa duyệt hoặc bị từ chối.");
+      return;
+    }
+    setListingToEdit(prop);
+    setEditTitle(prop.title);
+    setEditDesc(prop.description || "");
+    setEditPrice(prop.price);
+    setEditLocation(prop.location || "");
+    setEditCategoryId((prop as any).categoryId || "");
+    setEditCondition((prop as any).condition || "New");
+    setEditBrand((prop as any).brand || "");
+    setEditExchangeWish((prop as any).exchangeWish || (prop as any).dateRange || "");
+    setEditCashTopUpAmount((prop as any).cashTopUpAmount || 0);
+    setIsEditingListing(true);
+  };
+
+  const handleSaveListing = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!listingToEdit) return;
+    if (!editTitle.trim()) {
+      toast.error("Vui lòng điền tiêu đề tin đăng.");
+      return;
+    }
+    setIsSavingListing(true);
+    try {
+      await apiClient.updateListing(listingToEdit.id, {
+        title: editTitle.trim(),
+        description: editDesc.trim(),
+        categoryId: editCategoryId || undefined,
+        estimatedAmount: editPrice,
+        currency: "VND",
+        condition: editCondition,
+        brand: editBrand.trim() || undefined,
+        exchangeWish: editExchangeWish.trim() || undefined,
+        cashTopUpAmount: editCashTopUpAmount,
+        location: editLocation.trim()
+      });
+      toast.success("Cập nhật tin đăng thành công!");
+      setIsEditingListing(false);
+      setListingToEdit(null);
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (err: any) {
+      toast.error(err.message || "Cập nhật tin đăng thất bại.");
+    } finally {
+      setIsSavingListing(false);
     }
   };
 
@@ -510,19 +593,45 @@ export default function ProfilePage({
                       <h4 className="font-semibold text-xs text-carbon truncate mr-6">
                         {prop.title}
                       </h4>
+                      {prop.status && (
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase shrink-0 ${
+                          prop.status === "Approved" || prop.status === "Active"
+                            ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                            : prop.status === "Pending"
+                              ? "bg-amber-50 text-amber-600 border border-amber-100"
+                              : prop.status === "Rejected"
+                                ? "bg-rose-50 text-rose-600 border border-rose-100"
+                                : "bg-gray-50 text-gray-500 border border-gray-100"
+                        }`}>
+                          {prop.status === "Approved" || prop.status === "Active" ? "Đã duyệt" :
+                           prop.status === "Pending" ? "Chờ duyệt" :
+                           prop.status === "Rejected" ? "Bị từ chối" : "Hết hạn"}
+                        </span>
+                      )}
                     </div>
                     <p className="text-[10px] text-slate">{prop.location} • <span className="capitalize">{prop.category}</span></p>
                     <p className="text-xs font-bold text-carbon pt-0.5">
                       {prop.price.toLocaleString("vi-VN")} đ <span className="text-[10px] text-slate font-normal">/ sản phẩm</span>
                     </p>
                   </div>
-                  <button
-                    onClick={() => onDeleteHostProperty(prop.id)}
-                    className="absolute right-3 bottom-3 p-1.5 rounded-lg text-slate hover:text-red-500 hover:bg-red-50 transition cursor-pointer"
-                    title="Xóa bài đăng"
-                  >
-                    <Trash2 className="h-4.5 w-4.5" />
-                  </button>
+                  <div className="absolute right-3 bottom-3 flex items-center gap-1.5">
+                    {(prop.status === "Pending" || prop.status === "Rejected" || !prop.status) && (
+                      <button
+                        onClick={() => handleOpenEditListing(prop)}
+                        className="p-1.5 rounded-lg text-slate hover:text-blue-500 hover:bg-blue-50 transition cursor-pointer"
+                        title="Chỉnh sửa bài đăng"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => onDeleteHostProperty(prop.id)}
+                      className="p-1.5 rounded-lg text-slate hover:text-red-500 hover:bg-red-50 transition cursor-pointer"
+                      title="Xóa bài đăng"
+                    >
+                      <Trash2 className="h-4.5 w-4.5" />
+                    </button>
+                  </div>
                 </div>
               ))
             )
@@ -531,6 +640,178 @@ export default function ProfilePage({
         </div>
       </div>
     </main>
+
+    {isEditingListing && listingToEdit && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-carbon/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+        <div className="w-full max-w-lg bg-cloud border border-mist rounded-[24px] p-6 shadow-2xl space-y-5 text-left animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh] font-sans">
+          <div className="flex justify-between items-center">
+            <h3 className="font-bold text-carbon text-lg">Chỉnh sửa tin đăng</h3>
+            <button 
+              onClick={() => {
+                setIsEditingListing(false);
+                setListingToEdit(null);
+              }}
+              className="text-slate hover:text-carbon p-1 rounded-full hover:bg-fog transition cursor-pointer"
+              disabled={isSavingListing}
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          <form onSubmit={handleSaveListing} className="space-y-4 text-xs">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-carbon uppercase tracking-wider">Tiêu đề tin đăng</label>
+              <input
+                type="text"
+                required
+                placeholder="Nhập tiêu đề sản phẩm..."
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-mist bg-cloud focus:border-brand-coral focus:ring-1 focus:ring-brand-coral text-sm text-carbon transition outline-none"
+                disabled={isSavingListing}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-carbon uppercase tracking-wider">Mô tả chi tiết</label>
+              <textarea
+                placeholder="Mô tả tình trạng, phụ kiện..."
+                value={editDesc}
+                onChange={(e) => setEditDesc(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-mist bg-cloud focus:border-brand-coral focus:ring-1 focus:ring-brand-coral text-sm text-carbon transition outline-none min-h-[80px]"
+                disabled={isSavingListing}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-carbon uppercase tracking-wider">Danh mục</label>
+                <select
+                  value={editCategoryId}
+                  onChange={(e) => setEditCategoryId(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-mist bg-cloud focus:border-brand-coral focus:ring-1 focus:ring-brand-coral text-sm text-carbon transition outline-none"
+                  disabled={isSavingListing}
+                >
+                  <option value="">Chọn danh mục</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-carbon uppercase tracking-wider">Giá trị ước lượng (VNĐ)</label>
+                <input
+                  type="number"
+                  min="0"
+                  required
+                  value={editPrice}
+                  onChange={(e) => setEditPrice(Number(e.target.value))}
+                  className="w-full px-4 py-2.5 rounded-xl border border-mist bg-cloud focus:border-brand-coral focus:ring-1 focus:ring-brand-coral text-sm text-carbon transition outline-none"
+                  disabled={isSavingListing}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-carbon uppercase tracking-wider">Tình trạng</label>
+                <select
+                  value={editCondition}
+                  onChange={(e) => setEditCondition(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-mist bg-cloud focus:border-brand-coral focus:ring-1 focus:ring-brand-coral text-sm text-carbon transition outline-none font-sans"
+                  disabled={isSavingListing}
+                >
+                  <option value="New">Mới 100%</option>
+                  <option value="LikeNew">Như mới 99%</option>
+                  <option value="Used">Đã qua sử dụng</option>
+                  <option value="Old">Cũ / Hỏng nhẹ</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-carbon uppercase tracking-wider">Thương hiệu (nếu có)</label>
+                <input
+                  type="text"
+                  placeholder="Ví dụ: Apple, Samsung..."
+                  value={editBrand}
+                  onChange={(e) => setEditBrand(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-mist bg-cloud focus:border-brand-coral focus:ring-1 focus:ring-brand-coral text-sm text-carbon transition outline-none"
+                  disabled={isSavingListing}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-carbon uppercase tracking-wider">Khu vực giao dịch</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ví dụ: Đống Đa, Hà Nội..."
+                  value={editLocation}
+                  onChange={(e) => setEditLocation(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-mist bg-cloud focus:border-brand-coral focus:ring-1 focus:ring-brand-coral text-sm text-carbon transition outline-none"
+                  disabled={isSavingListing}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-carbon uppercase tracking-wider">Số tiền muốn bù (nếu có)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={editCashTopUpAmount}
+                  onChange={(e) => setEditCashTopUpAmount(Number(e.target.value))}
+                  className="w-full px-4 py-2.5 rounded-xl border border-mist bg-cloud focus:border-brand-coral focus:ring-1 focus:ring-brand-coral text-sm text-carbon transition outline-none"
+                  disabled={isSavingListing}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-carbon uppercase tracking-wider">Đồ muốn trao đổi lấy</label>
+              <input
+                type="text"
+                placeholder="Ví dụ: Muốn đổi lấy iPad Pro M1 hoặc Laptop..."
+                value={editExchangeWish}
+                onChange={(e) => setEditExchangeWish(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-mist bg-cloud focus:border-brand-coral focus:ring-1 focus:ring-brand-coral text-sm text-carbon transition outline-none"
+                disabled={isSavingListing}
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsEditingListing(false);
+                  setListingToEdit(null);
+                }}
+                className="flex-1 py-2.5 border border-mist hover:bg-fog text-carbon rounded-xl font-bold text-xs transition cursor-pointer text-center"
+                disabled={isSavingListing}
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-2.5 bg-brand-coral hover:bg-brand-deep disabled:bg-slate/30 text-cloud rounded-xl font-bold text-xs transition cursor-pointer text-center flex items-center justify-center gap-1.5"
+                disabled={isSavingListing || !editTitle || !editLocation}
+              >
+                {isSavingListing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Đang lưu...</span>
+                  </>
+                ) : (
+                  <span>Lưu thay đổi</span>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
 
     {isEditing && (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-carbon/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">

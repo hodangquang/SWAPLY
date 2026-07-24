@@ -56,7 +56,7 @@ function AppContent() {
     isOpen: false,
     title: "",
     message: "",
-    onConfirm: () => {},
+    onConfirm: () => { },
   });
 
   const [reviewState, setReviewState] = useState<{

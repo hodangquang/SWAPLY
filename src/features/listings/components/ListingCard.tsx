@@ -114,12 +114,6 @@ export default function ListingCard({
           <h3 className="font-sans font-semibold text-sm text-carbon line-clamp-1 flex-1">
             {property.title}
           </h3>
-          <div className="flex items-center gap-1 shrink-0">
-            <Star className="h-3 w-3 fill-carbon text-carbon" />
-            <span className="text-xs font-semibold text-carbon">
-              {property.rating?.toFixed(2) || "5.00"}
-            </span>
-          </div>
         </div>
 
         <p className="font-sans text-slate text-xs">

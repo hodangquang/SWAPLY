@@ -9,6 +9,17 @@ import {
   MapPin,
   ChevronLeft,
   ChevronRight,
+  Smartphone,
+  Tablet,
+  Laptop,
+  Tv,
+  BookOpen,
+  Shirt,
+  Utensils,
+  Bike,
+  Gamepad2,
+  Headphones,
+  Watch,
 } from "lucide-react";
 import { Property } from "@/types";
 import ListingCard from "@features/listings/components/ListingCard";
@@ -48,43 +59,69 @@ export default function HomePage({
     };
 
     const nameLower = (categoryName || "").toLowerCase();
+    if (nameLower.includes("ipad") || nameLower.includes("tablet") || nameLower.includes("máy tính bảng")) {
+      return <Tablet {...iconProps} />;
+    }
+    if (nameLower.includes("điện thoại") || nameLower.includes("phone") || nameLower.includes("di động")) {
+      return <Smartphone {...iconProps} />;
+    }
     if (
-      nameLower.includes("điện tử") ||
-      nameLower.includes("công nghệ") ||
-      nameLower.includes("experience")
+      nameLower.includes("máy tính") ||
+      nameLower.includes("laptop") ||
+      nameLower.includes("computer") ||
+      nameLower.includes("pc")
     ) {
-      return <Camera {...iconProps} />;
+      return <Laptop {...iconProps} />;
+    }
+    if (nameLower.includes("tivi") || nameLower.includes("tv") || nameLower.includes("màn hình")) {
+      return <Tv {...iconProps} />;
     }
     if (
       nameLower.includes("sách") ||
       nameLower.includes("truyện") ||
-      nameLower.includes("memory")
+      nameLower.includes("memory") ||
+      nameLower.includes("đọc")
     ) {
-      return <Compass {...iconProps} />;
+      return <BookOpen {...iconProps} />;
     }
     if (
       nameLower.includes("thời trang") ||
       nameLower.includes("quần áo") ||
-      nameLower.includes("seville")
+      nameLower.includes("giày") ||
+      nameLower.includes("seville") ||
+      nameLower.includes("mũ") ||
+      nameLower.includes("kính")
     ) {
-      return <Sparkles {...iconProps} />;
+      return <Shirt {...iconProps} />;
+    }
+    if (nameLower.includes("game") || nameLower.includes("đồ chơi") || nameLower.includes("toy") || nameLower.includes("mansion")) {
+      return <Gamepad2 {...iconProps} />;
+    }
+    if (nameLower.includes("tai nghe") || nameLower.includes("loa") || nameLower.includes("audio") || nameLower.includes("âm thanh")) {
+      return <Headphones {...iconProps} />;
+    }
+    if (nameLower.includes("đồng hồ") || nameLower.includes("watch") || nameLower.includes("smartwatch")) {
+      return <Watch {...iconProps} />;
     }
     if (
       nameLower.includes("gia dụng") ||
       nameLower.includes("nhà cửa") ||
+      nameLower.includes("bếp") ||
       nameLower.includes("beach")
     ) {
-      return <Home {...iconProps} />;
+      return <Utensils {...iconProps} />;
     }
-    if (nameLower.includes("thể thao") || nameLower.includes("cabin")) {
-      return <Palmtree {...iconProps} />;
+    if (nameLower.includes("thể thao") || nameLower.includes("xe đạp") || nameLower.includes("vợt") || nameLower.includes("cabin")) {
+      return <Bike {...iconProps} />;
     }
     if (
-      nameLower.includes("giải trí") ||
-      nameLower.includes("game") ||
-      nameLower.includes("mansion")
+      nameLower.includes("điện tử") ||
+      nameLower.includes("công nghệ") ||
+      nameLower.includes("experience") ||
+      nameLower.includes("máy ảnh") ||
+      nameLower.includes("camera")
     ) {
-      return <Castle {...iconProps} />;
+      return <Camera {...iconProps} />;
     }
     return <Home {...iconProps} />;
   };
