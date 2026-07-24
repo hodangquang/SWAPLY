@@ -102,7 +102,7 @@ export async function fetchUnreadNotificationCount(): Promise<number> {
 // PUT /api/Notifications/{id}/read – Đánh dấu một thông báo là đã đọc
 export async function markNotificationRead(id: string): Promise<void> {
   const token = getAuthToken();
-  if (!token) throw new Error("Vui lòng đăng nhập để thực hiện thao tác này.");
+  if (!token) throw new Error("Bạn vui lòng đăng nhập tài khoản để cập nhật trạng thái thông báo nhé.");
 
   const response = await fetch(
     `${getBaseUrl()}/Notifications/${encodeURIComponent(id)}/read`,
@@ -123,7 +123,7 @@ export async function markNotificationRead(id: string): Promise<void> {
 // PUT /api/Notifications/read-all – Đánh dấu tất cả thông báo đã đọc
 export async function markAllNotificationsRead(): Promise<void> {
   const token = getAuthToken();
-  if (!token) throw new Error("Vui lòng đăng nhập để thực hiện thao tác này.");
+  if (!token) throw new Error("Bạn vui lòng đăng nhập tài khoản để có thể đánh dấu đọc tất cả thông báo nhé.");
 
   const response = await fetch(`${getBaseUrl()}/Notifications/read-all`, {
     method: "PUT",

@@ -127,7 +127,7 @@ export async function fetchListingById(id: string): Promise<Property | null> {
     if (response.status === 404) {
       return null;
     }
-    throw new Error("Không thể tải chi tiết tin đăng.");
+    throw new Error("Rất tiếc, hệ thống không thể tải thông tin chi tiết của tin đăng này. Bạn vui lòng tải lại trang hoặc thử lại sau nhé!");
   }
 
   const data = await response.json().catch(() => null);
@@ -141,9 +141,9 @@ export async function fetchPendingListings(): Promise<Property[]> {
 
   if (!response.ok) {
     if (response.status === 401) {
-      throw new Error("Bạn cần đăng nhập Admin để xem danh sách chờ duyệt.");
+      throw new Error("Tài khoản của bạn cần có quyền Quản trị viên để xem danh sách tin đăng chờ duyệt.");
     }
-    throw new Error("Không thể tải danh sách tin đăng chờ duyệt.");
+    throw new Error("Rất tiếc, hệ thống không thể tải danh sách tin đăng đang chờ duyệt lúc này. Bạn vui lòng thử lại sau.");
   }
 
   const data = await response.json().catch(() => null);
@@ -158,7 +158,7 @@ export async function fetchPendingListings(): Promise<Property[]> {
 export async function createProperty(prop: Property): Promise<void> {
   const token = getAuthToken();
   if (!token) {
-    throw new Error("Vui lòng đăng nhập để thực hiện chức năng này.");
+    throw new Error("Bạn vui lòng đăng nhập tài khoản để có thể đăng bài trao đổi sản phẩm nhé.");
   }
 
   const formData = new FormData();
@@ -218,7 +218,7 @@ export async function submitListing(id: string): Promise<void> {
 export async function deleteProperty(id: string): Promise<void> {
   const token = getAuthToken();
   if (!token) {
-    throw new Error("Vui lòng đăng nhập để thực hiện chức năng này.");
+    throw new Error("Bạn vui lòng đăng nhập tài khoản để có thể xóa tin đăng của mình.");
   }
 
   const response = await fetch(`${getBaseUrl()}/Listings/${id}`, {
@@ -227,7 +227,7 @@ export async function deleteProperty(id: string): Promise<void> {
   });
 
   if (!response.ok) {
-    throw new Error("Xóa tin đăng thất bại.");
+    throw new Error("Rất tiếc, quá trình xóa tin đăng của bạn đã gặp lỗi. Vui lòng thử lại.");
   }
 }
 
@@ -252,7 +252,7 @@ export async function updatePropertyStatus(id: string, status: Property["status"
     });
 
     if (!patchRes.ok) {
-      throw new Error("Cập nhật trạng thái tin đăng thất bại.");
+      throw new Error("Rất tiếc, hệ thống gặp lỗi khi cập nhật trạng thái tin đăng. Bạn vui lòng thử lại.");
     }
   }
 }
@@ -290,7 +290,7 @@ export async function rejectListing(id: string, reason?: string): Promise<void> 
 export async function fetchMyListings(): Promise<Property[]> {
   const token = getAuthToken();
   if (!token) {
-    throw new Error("Vui lòng đăng nhập để xem tin đăng của bạn.");
+    throw new Error("Bạn vui lòng đăng nhập tài khoản để xem danh sách tin đăng của mình nhé.");
   }
 
   const response = await fetch(`${getBaseUrl()}/Listings/my`, {
@@ -302,7 +302,7 @@ export async function fetchMyListings(): Promise<Property[]> {
   });
 
   if (!response.ok) {
-    throw new Error("Không thể tải danh sách tin đăng của bạn.");
+    throw new Error("Rất tiếc, hệ thống chưa thể tải danh sách tin đăng của bạn lúc này. Bạn vui lòng thử lại sau.");
   }
 
   const data = await response.json().catch(() => null);
@@ -340,7 +340,7 @@ export interface UpdateListingPayload {
 export async function updateListing(id: string, payload: UpdateListingPayload): Promise<void> {
   const token = getAuthToken();
   if (!token) {
-    throw new Error("Vui lòng đăng nhập để cập nhật tin đăng.");
+    throw new Error("Bạn vui lòng đăng nhập tài khoản để cập nhật thông tin tin đăng nhé.");
   }
 
   const response = await fetch(`${getBaseUrl()}/Listings/${encodeURIComponent(id)}`, {
@@ -369,7 +369,7 @@ export interface FavoriteResult {
 export async function toggleFavorite(listingId: string): Promise<FavoriteResult> {
   const token = getAuthToken();
   if (!token) {
-    throw new Error("Vui lòng đăng nhập để thêm yêu thích.");
+    throw new Error("Bạn vui lòng đăng nhập để có thể lưu bài viết này vào danh sách yêu thích nhé.");
   }
 
   const response = await fetch(`${getBaseUrl()}/Listings/${encodeURIComponent(listingId)}/favorite`, {
@@ -381,7 +381,7 @@ export async function toggleFavorite(listingId: string): Promise<FavoriteResult>
   });
 
   if (!response.ok) {
-    throw new Error("Không thể cập nhật yêu thích.");
+    throw new Error("Rất tiếc, thao tác cập nhật trạng thái yêu thích gặp lỗi. Bạn vui lòng thử lại.");
   }
 
   return response.json();
@@ -390,7 +390,7 @@ export async function toggleFavorite(listingId: string): Promise<FavoriteResult>
 export async function renewListing(id: string): Promise<void> {
   const token = getAuthToken();
   if (!token) {
-    throw new Error("Vui lòng đăng nhập để gia hạn tin đăng.");
+    throw new Error("Bạn vui lòng đăng nhập tài khoản để có thể gia hạn tin đăng này.");
   }
 
   const response = await fetch(`${getBaseUrl()}/Listings/${encodeURIComponent(id)}/renew`, {
@@ -403,7 +403,7 @@ export async function renewListing(id: string): Promise<void> {
 
   if (!response.ok) {
     const errData = await response.json().catch(() => ({}));
-    const errMsg = errData.error || "Chỉ tin đăng đã hết hạn mới có thể gia hạn.";
+    const errMsg = errData.error || "Rất tiếc, hệ thống chỉ hỗ trợ gia hạn đối với những tin đăng đã hết hạn hiển thị.";
     throw new Error(errMsg);
   }
 }
@@ -411,7 +411,7 @@ export async function renewListing(id: string): Promise<void> {
 export async function fetchMyFavorites(): Promise<Property[]> {
   const token = getAuthToken();
   if (!token) {
-    throw new Error("Vui lòng đăng nhập để xem tin yêu thích.");
+    throw new Error("Bạn vui lòng đăng nhập tài khoản để xem danh sách sản phẩm yêu thích nhé.");
   }
 
   const response = await fetch(`${getBaseUrl()}/Listings/my/favorites`, {
@@ -423,7 +423,7 @@ export async function fetchMyFavorites(): Promise<Property[]> {
   });
 
   if (!response.ok) {
-    throw new Error("Không thể tải danh sách yêu thích.");
+    throw new Error("Không thể kết nối đến máy chủ để tải danh sách yêu thích. Vui lòng thử lại sau.");
   }
 
   const data = await response.json().catch(() => null);
@@ -446,9 +446,9 @@ export async function fetchAdminUsers(keyword: string = "", page: number = 1, pa
 
   if (!response.ok) {
     if (response.status === 401) {
-      throw new Error("Bạn cần đăng nhập Admin để xem danh sách thành viên.");
+      throw new Error("Yêu cầu quyền Quản trị viên để truy cập danh sách thành viên.");
     }
-    throw new Error("Không thể tải danh sách thành viên.");
+    throw new Error("Hệ thống chưa thể tải danh sách thành viên lúc này. Vui lòng thử lại sau.");
   }
 
   const data = await response.json().catch(() => null);
@@ -480,7 +480,7 @@ export async function fetchAdminUserById(id: string): Promise<any | null> {
     if (response.status === 404) {
       return null;
     }
-    throw new Error("Không thể tải chi tiết thành viên.");
+    throw new Error("Không thể tìm thấy hoặc tải thông tin chi tiết thành viên này.");
   }
 
   const user = await response.json().catch(() => null);
@@ -506,7 +506,7 @@ export async function lockUser(id: string): Promise<void> {
   });
 
   if (!response.ok) {
-    throw new Error("Không thể khóa tài khoản thành viên.");
+    throw new Error("Thao tác khóa tài khoản không thành công. Vui lòng thử lại.");
   }
 }
 
@@ -517,14 +517,14 @@ export async function unlockUser(id: string): Promise<void> {
   });
 
   if (!response.ok) {
-    throw new Error("Không thể mở khóa tài khoản thành viên.");
+    throw new Error("Thao tác mở khóa tài khoản không thành công. Vui lòng thử lại.");
   }
 }
 
 export async function reportUser(targetId: string, reason: string, description: string): Promise<void> {
   const token = getAuthToken();
   if (!token) {
-    throw new Error("Vui lòng đăng nhập để thực hiện chức năng này.");
+    throw new Error("Bạn vui lòng đăng nhập để gửi báo cáo vi phạm nhé.");
   }
 
   const response = await fetch(`${getBaseUrl()}/reports`, {
@@ -556,9 +556,9 @@ export async function fetchAdminReports(page: number = 1, pageSize: number = 100
 
   if (!response.ok) {
     if (response.status === 401) {
-      throw new Error("Bạn cần đăng nhập Admin để xem danh sách báo cáo.");
+      throw new Error("Yêu cầu quyền Quản trị viên để xem danh sách báo cáo vi phạm.");
     }
-    throw new Error("Không thể tải danh sách báo cáo vi phạm.");
+    throw new Error("Không thể tải danh sách báo cáo vi phạm vào lúc này. Vui lòng thử lại.");
   }
 
   const data = await response.json().catch(() => null);
@@ -584,7 +584,7 @@ export async function fetchAdminReports(page: number = 1, pageSize: number = 100
 export async function fetchMyListingsByStatus(status: string): Promise<Property[]> {
   const token = getAuthToken();
   if (!token) {
-    throw new Error("Vui lòng đăng nhập để xem tin đăng của bạn.");
+    throw new Error("Bạn vui lòng đăng nhập tài khoản để xem danh sách tin đăng của mình.");
   }
 
   const response = await fetch(
@@ -599,7 +599,7 @@ export async function fetchMyListingsByStatus(status: string): Promise<Property[
   );
 
   if (!response.ok) {
-    throw new Error("Không thể tải danh sách tin đăng theo trạng thái.");
+    throw new Error("Rất tiếc, hệ thống không thể tải danh sách tin đăng theo bộ lọc trạng thái lúc này.");
   }
 
   const data = await response.json().catch(() => null);
@@ -651,9 +651,9 @@ export async function fetchAdminAllListings(
 
   if (!response.ok) {
     if (response.status === 401) {
-      throw new Error("Bạn cần đăng nhập Admin để xem toàn bộ bài đăng.");
+      throw new Error("Yêu cầu quyền Quản trị viên để xem danh sách tất cả bài viết.");
     }
-    throw new Error("Không thể tải danh sách bài đăng.");
+    throw new Error("Không thể tải danh sách bài đăng từ máy chủ. Vui lòng thử lại sau.");
   }
 
   const data = await response.json().catch(() => null);
@@ -714,9 +714,9 @@ export async function fetchDeletedListings(
 
   if (!response.ok) {
     if (response.status === 401) {
-      throw new Error("Bạn cần đăng nhập Admin để xem bài đăng đã xóa.");
+      throw new Error("Yêu cầu quyền Quản trị viên để xem các bài đăng đã xóa.");
     }
-    throw new Error("Không thể tải danh sách bài đăng đã xóa.");
+    throw new Error("Không thể tải danh sách bài đăng đã bị xóa lúc này.");
   }
 
   const data = await response.json().catch(() => null);
@@ -754,9 +754,9 @@ export async function fetchAdminPendingReports(): Promise<any[]> {
 
   if (!response.ok) {
     if (response.status === 401) {
-      throw new Error("Bạn cần đăng nhập Admin để xem báo cáo chưa xử lý.");
+      throw new Error("Yêu cầu quyền Quản trị viên để xem danh sách báo cáo chưa xử lý.");
     }
-    throw new Error("Không thể tải danh sách báo cáo chưa xử lý.");
+    throw new Error("Không thể tải danh sách báo cáo chưa xử lý vào lúc này. Vui lòng tải lại.");
   }
 
   const data = await response.json().catch(() => null);
@@ -790,7 +790,7 @@ export async function fetchAdminReportById(id: string): Promise<any | null> {
 
   if (!response.ok) {
     if (response.status === 404) return null;
-    throw new Error("Không thể tải chi tiết báo cáo.");
+    throw new Error("Rất tiếc, hệ thống không thể tải thông tin chi tiết của báo cáo này.");
   }
 
   const rep = await response.json().catch(() => null);

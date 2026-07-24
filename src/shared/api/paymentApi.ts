@@ -95,7 +95,7 @@ export async function fetchPaymentById(id: string): Promise<Payment | null> {
 // DELETE /api/Payments/{id} – Hủy giao dịch thanh toán chưa hoàn tất
 export async function cancelPayment(id: string): Promise<void> {
   const token = getAuthToken();
-  if (!token) throw new Error("Vui lòng đăng nhập để thực hiện thao tác này.");
+  if (!token) throw new Error("Bạn vui lòng đăng nhập tài khoản để hủy giao dịch thanh toán nhé.");
 
   const response = await fetch(
     `${getBaseUrl()}/Payments/${encodeURIComponent(id)}`,
@@ -118,7 +118,7 @@ export async function createCheckout(
   payload: CheckoutPayload
 ): Promise<CheckoutResult> {
   const token = getAuthToken();
-  if (!token) throw new Error("Vui lòng đăng nhập để thực hiện thanh toán.");
+  if (!token) throw new Error("Bạn vui lòng đăng nhập tài khoản Swaply trước khi thực hiện thanh toán nhé.");
 
   const response = await fetch(`${getBaseUrl()}/Payments/checkout`, {
     method: "POST",

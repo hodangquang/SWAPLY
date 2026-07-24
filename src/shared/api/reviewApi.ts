@@ -77,7 +77,7 @@ export async function getUserRating(userId: string): Promise<{ rating: number; c
 export async function createReview(userId: string, listingId: string, rating: number, content: string): Promise<Review> {
   const token = getAuthToken();
   if (!token) {
-    throw new Error("Vui lòng đăng nhập để thực hiện thao tác này.");
+    throw new Error("Bạn vui lòng đăng nhập tài khoản để có thể gửi đánh giá nhé.");
   }
 
   const response = await fetch(`${getBaseUrl()}/Reviews`, {
@@ -112,7 +112,7 @@ export interface CreateExchangeReviewDto {
 export async function createExchangeReview(dto: CreateExchangeReviewDto): Promise<any> {
   const token = getAuthToken();
   if (!token) {
-    throw new Error("Vui lòng đăng nhập để thực hiện thao tác này.");
+    throw new Error("Bạn vui lòng đăng nhập tài khoản để có thể đánh giá giao dịch trao đổi nhé.");
   }
 
   const response = await fetch(`${getBaseUrl()}/Reviews`, {
@@ -142,7 +142,7 @@ export async function fetchReviewById(reviewId: string): Promise<Review> {
   });
 
   if (!response.ok) {
-    throw new Error("Không thể tải thông tin đánh giá.");
+    throw new Error("Rất tiếc, hệ thống chưa thể tải thông tin đánh giá lúc này. Bạn vui lòng thử lại sau.");
   }
 
   const item = await response.json();

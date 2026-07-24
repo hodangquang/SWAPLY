@@ -50,7 +50,7 @@ export async function fetchCategories(): Promise<Category[]> {
 export async function createCategory(category: { name: string; description?: string }): Promise<Category> {
   const token = getAuthToken();
   if (!token) {
-    throw new Error("Vui lòng đăng nhập để thực hiện thao tác này.");
+    throw new Error("Bạn vui lòng đăng nhập tài khoản để có thể tạo danh mục sản phẩm mới nhé.");
   }
 
   const response = await fetch(`${getBaseUrl()}/Categories`, {
@@ -110,7 +110,7 @@ export async function fetchCategoryById(id: string): Promise<Category | null> {
 export async function updateCategory(id: string, category: { name: string; description?: string }): Promise<Category> {
   const token = getAuthToken();
   if (!token) {
-    throw new Error("Vui lòng đăng nhập để thực hiện thao tác này.");
+    throw new Error("Bạn vui lòng đăng nhập tài khoản để có thể cập nhật thông tin danh mục này.");
   }
 
   const response = await fetch(`${getBaseUrl()}/Categories/${encodeURIComponent(id)}`, {
@@ -141,7 +141,7 @@ export async function updateCategory(id: string, category: { name: string; descr
 export async function deleteCategory(id: string): Promise<void> {
   const token = getAuthToken();
   if (!token) {
-    throw new Error("Vui lòng đăng nhập để thực hiện thao tác này.");
+    throw new Error("Bạn vui lòng đăng nhập tài khoản để thực hiện xóa danh mục sản phẩm này.");
   }
 
   const response = await fetch(`${getBaseUrl()}/Categories/${encodeURIComponent(id)}`, {
