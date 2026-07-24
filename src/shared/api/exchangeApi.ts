@@ -136,6 +136,29 @@ export async function fetchIncomingExchanges(): Promise<Exchange[]> {
   }
 }
 
+export async function fetchOutgoingExchanges(): Promise<Exchange[]> {
+  const token = getAuthToken();
+  if (!token) {
+    return [];
+  }
+
+  try {
+    const response = await fetch(`${getBaseUrl()}/Exchanges/my/outgoing`, {
+      headers: buildAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json().catch(() => null);
+    return Array.isArray(data) ? data : [];
+  } catch (e) {
+    console.error("Error fetching outgoing exchanges:", e);
+    return [];
+  }
+}
+
 export async function acceptExchange(id: string): Promise<void> {
   const token = getAuthToken();
   if (!token) {

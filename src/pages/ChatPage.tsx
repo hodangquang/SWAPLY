@@ -349,7 +349,7 @@ export default function ChatPage({ currentUser }: ChatPageProps) {
 
     setActionLoading(true);
     try {
-      await apiClient.cancelExchangeRequest(exchangeDetails.id);
+      await apiClient.cancelExchange(exchangeDetails.id);
       toast.success("Đã hủy đề xuất trao đổi.");
       // Reload exchange details
       const details = await apiClient.fetchExchangeById(exchangeDetails.id);
