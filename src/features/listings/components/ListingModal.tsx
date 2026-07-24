@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Star, X, Heart, MapPin, Calendar, Users, Shield, Compass, Check, CalendarCheck, Share2, ArrowLeft } from "lucide-react";
 import { Property, Booking, Review } from "@/types";
-import { MOCK_REVIEWS } from "@/data";
+import { apiClient } from "@shared/api/apiClient";
 
 interface ListingModalProps {
   property: Property;
@@ -24,24 +24,24 @@ export default function ListingModal({
   const [guestsCount, setGuestsCount] = useState(1);
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [reviews, setReviews] = useState<Review[]>([]);
 
-  // Generate dynamic reviews specific to this place
-  const reviews: Review[] = useMemo(() => {
-    return MOCK_REVIEWS.map((review, i) => {
-      // Tweak content slightly based on the property type
-      let content = review.content;
-      if (property.isExperience) {
-        content = content.replace("flat", "experience").replace("place", "session");
-      } else {
-        content = content.replace("session", "apartment").replace("experience", "stay");
+  useEffect(() => {
+    const loadReviews = async () => {
+      if (!property.ownerId) {
+        setReviews([]);
+        return;
       }
-      return {
-        ...review,
-        id: `${property.id}-review-${i}`,
-        content
-      };
-    });
-  }, [property]);
+      try {
+        const data = await apiClient.getUserReviews(property.ownerId);
+        setReviews(data || []);
+      } catch (err) {
+        console.warn("Could not load reviews in modal:", err);
+        setReviews([]);
+      }
+    };
+    loadReviews();
+  }, [property.ownerId]);
 
   // Calculate nights
   const nights = useMemo(() => {

@@ -40,15 +40,13 @@ export default function ListingCard({
         {property.status && property.status !== "Active" && (
           <div 
             className={`absolute top-3 left-3 text-cloud text-[11px] font-semibold tracking-[0.44px] uppercase px-[10px] py-[6px] rounded-[4px] z-10 shadow-[0_2px_6px_rgba(0,0,0,0.25)] ${
-              property.status === "Active" 
-                ? "bg-emerald-500" 
-                : property.status === "Pending" 
-                  ? "bg-amber-500" 
-                  : "bg-gray-500"
+              property.status === "Pending" 
+                ? "bg-amber-500" 
+                : "bg-gray-500"
             }`}
             style={{ fontFeatureSettings: '"salt" on' }}
           >
-            {property.status === "Active" ? "Hoạt động" : property.status === "Pending" ? "Chờ duyệt" : property.status}
+            {property.status === "Pending" ? "Chờ duyệt" : property.status === "Rejected" ? "Từ chối" : property.status}
           </div>
         )}
 

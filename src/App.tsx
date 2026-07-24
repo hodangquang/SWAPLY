@@ -160,7 +160,7 @@ function AppContent() {
   });
 
   const [activeProfileTab, setActiveProfileTab] = useState<
-    "trips" | "wishlist" | "host"
+    "trips" | "wishlist" | "host" | "received"
   >("trips");
 
   // Sync activeDashboardTab with profile page tab
@@ -202,6 +202,28 @@ function AppContent() {
   }, [currentUser]);
 
   useEffect(() => {
+    const handlePaymentRedirect = async () => {
+      const path = window.location.pathname;
+      if (path.includes("/payment/result")) {
+        const queryParams = window.location.search;
+        const ref = new URLSearchParams(queryParams).get("ref");
+        if (ref) {
+          try {
+            // Process the VNPAY return query string using paymentApi
+            await apiClient.fetchPaymentReturn(queryParams.replace(/^\?/, ""));
+            toast.success("Thanh toán thành công! Gói Premium của bạn đã được kích hoạt.");
+          } catch (e: any) {
+            console.error("Error processing payment return:", e);
+            toast.error("Xử lý kết quả thanh toán thất bại.");
+          } finally {
+            // Redirect to profile and clean up address bar URL
+            window.history.replaceState({}, "", "/profile");
+            navigate("profile");
+          }
+        }
+      }
+    };
+    handlePaymentRedirect();
     loadData();
   }, []);
 

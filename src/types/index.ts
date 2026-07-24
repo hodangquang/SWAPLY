@@ -8,29 +8,31 @@ export interface Property {
   id: string;
   title: string;
   description: string;
-  ownerId: string;
-  ownerName: string;
-  ownerAvatar: string;
-  categoryId: string;
-  categoryName: string;
-  estimatedValue: number;
-  currency: string;
-  condition: ItemCondition;
-  conditionName: string;
-  status: ListingStatus;
-  brand: string;
-  exchangeWish: string;
-  cashTopUpAmount: number;
-  cashTopUpCurrency: string;
-  location: string;
-  viewCount: number;
-  favoriteCount: number;
+  ownerId?: string;
+  ownerName?: string;
+  ownerAvatar?: string;
+  categoryId?: string;
+  categoryName?: string;
+  estimatedValue?: number;
+  currency?: string;
+  condition?: ItemCondition;
+  conditionName?: string;
+  status?: ListingStatus;
+  brand?: string;
+  exchangeWish?: string;
+  cashTopUpAmount?: number;
+  cashTopUpCurrency?: string;
+  location?: string;
+  viewCount?: number;
+  favoriteCount?: number;
   images: string[];
-  createdAt: string;
-  updatedAt: string;
-  expiresAt: string;
-  rejectionReason: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  expiresAt?: string;
+  rejectionReason?: string | null;
   // Legacy/compatible fields
+  hostName?: string;
+  hostAvatar?: string;
   hostType?: string;
   price?: number;
   rating?: number;
@@ -45,7 +47,7 @@ export interface Property {
 }
 
 export type ItemCondition = "New" | "LikeNew" | "Good" | "Fair";
-export type ListingStatus = "Pending" | "Active" | "Rejected" | "Expired";
+export type ListingStatus = "Pending" | "Active" | "Approved" | "Rejected" | "Expired";
 
 export interface Booking {
   id: string;

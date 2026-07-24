@@ -579,3 +579,308 @@ export async function fetchAdminReports(page: number = 1, pageSize: number = 100
     createdAt: rep.createdAt ? rep.createdAt.split("T")[0] : "2026-07-23",
   }));
 }
+
+// GET /api/Listings/my/{status} – Lọc bài đăng cá nhân theo trạng thái
+export async function fetchMyListingsByStatus(status: string): Promise<Property[]> {
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error("Vui lòng đăng nhập để xem tin đăng của bạn.");
+  }
+
+  const response = await fetch(
+    `${getBaseUrl()}/Listings/my/${encodeURIComponent(status)}`,
+    {
+      method: "GET",
+      headers: {
+        accept: "*/*",
+        Authorization: token.toLowerCase().startsWith("bearer ") ? token : `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Không thể tải danh sách tin đăng theo trạng thái.");
+  }
+
+  const data = await response.json().catch(() => null);
+  const items = Array.isArray(data) ? data : data?.items || [];
+
+  return (Array.isArray(items) ? items : []).map((item: any, index: number) => ({
+    ...mapProperty(item, index),
+    images: Array.isArray(item.images)
+      ? item.images.map((img: any) => typeof img === "string" ? img : img.imageUrl || "").filter(Boolean)
+      : [],
+    expiresAt: item.expiresAt || "",
+    rejectionReason: item.rejectionReason || null,
+  }));
+}
+
+// GET /api/Listings/category/{categoryId} – Lấy bài đăng theo danh mục
+export async function fetchListingsByCategory(categoryId: string): Promise<Property[]> {
+  try {
+    const response = await fetch(
+      `${getBaseUrl()}/Listings/category/${encodeURIComponent(categoryId)}`,
+      {
+        headers: { accept: "*/*" },
+      }
+    );
+
+    if (!response.ok) return [];
+
+    const data = await response.json().catch(() => null);
+    const items = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [];
+
+    return items.map((item: any, index: number) => mapProperty(item, index));
+  } catch (e) {
+    console.error("Error fetching listings by category:", e);
+    return [];
+  }
+}
+
+// GET /api/admin/listings – Xem toàn bộ bài đăng trong hệ thống
+export async function fetchAdminAllListings(
+  page: number = 1,
+  pageSize: number = 100
+): Promise<Property[]> {
+  const response = await fetch(
+    `${getBaseUrl()}/admin/listings?page=${page}&pageSize=${pageSize}`,
+    {
+      headers: buildAuthHeaders(),
+    }
+  );
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error("Bạn cần đăng nhập Admin để xem toàn bộ bài đăng.");
+    }
+    throw new Error("Không thể tải danh sách bài đăng.");
+  }
+
+  const data = await response.json().catch(() => null);
+  const items = Array.isArray(data?.items)
+    ? data.items
+    : Array.isArray(data)
+      ? data
+      : [];
+
+  return items.map((item: any, index: number) => mapProperty(item, index));
+}
+
+// PUT /api/admin/listings/{id}/hide – Ẩn bài viết vi phạm
+export async function hideListing(id: string): Promise<void> {
+  const response = await fetch(
+    `${getBaseUrl()}/admin/listings/${encodeURIComponent(id)}/hide`,
+    {
+      method: "PUT",
+      headers: buildAuthHeaders(),
+    }
+  );
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    const errMsg = errData.error || errData.message || errData.title || "Ẩn bài đăng thất bại.";
+    throw new Error(errMsg);
+  }
+}
+
+// PUT /api/admin/listings/{id}/restore – Khôi phục bài đăng bị ẩn/xóa
+export async function restoreListing(id: string): Promise<void> {
+  const response = await fetch(
+    `${getBaseUrl()}/admin/listings/${encodeURIComponent(id)}/restore`,
+    {
+      method: "PUT",
+      headers: buildAuthHeaders(),
+    }
+  );
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    const errMsg = errData.error || errData.message || errData.title || "Khôi phục bài đăng thất bại.";
+    throw new Error(errMsg);
+  }
+}
+
+// GET /api/admin/listings/deleted – Xem danh sách bài đăng đã xóa
+export async function fetchDeletedListings(
+  page: number = 1,
+  pageSize: number = 100
+): Promise<Property[]> {
+  const response = await fetch(
+    `${getBaseUrl()}/admin/listings/deleted?page=${page}&pageSize=${pageSize}`,
+    {
+      headers: buildAuthHeaders(),
+    }
+  );
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error("Bạn cần đăng nhập Admin để xem bài đăng đã xóa.");
+    }
+    throw new Error("Không thể tải danh sách bài đăng đã xóa.");
+  }
+
+  const data = await response.json().catch(() => null);
+  const items = Array.isArray(data?.items)
+    ? data.items
+    : Array.isArray(data)
+      ? data
+      : [];
+
+  return items.map((item: any, index: number) => mapProperty(item, index));
+}
+
+// DELETE /api/admin/listings/{id} – Xóa vĩnh viễn bài đăng
+export async function permanentDeleteListing(id: string): Promise<void> {
+  const response = await fetch(
+    `${getBaseUrl()}/admin/listings/${encodeURIComponent(id)}`,
+    {
+      method: "DELETE",
+      headers: buildAuthHeaders(),
+    }
+  );
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    const errMsg = errData.error || errData.message || errData.title || "Xóa vĩnh viễn bài đăng thất bại.";
+    throw new Error(errMsg);
+  }
+}
+
+// GET /api/admin/reports/pending – Xem danh sách báo cáo chưa xử lý
+export async function fetchAdminPendingReports(): Promise<any[]> {
+  const response = await fetch(`${getBaseUrl()}/admin/reports/pending`, {
+    headers: buildAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error("Bạn cần đăng nhập Admin để xem báo cáo chưa xử lý.");
+    }
+    throw new Error("Không thể tải danh sách báo cáo chưa xử lý.");
+  }
+
+  const data = await response.json().catch(() => null);
+  const items = Array.isArray(data?.items)
+    ? data.items
+    : Array.isArray(data)
+      ? data
+      : [];
+
+  return items.map((rep: any) => ({
+    id: rep.id || rep.reportId || `rep-${Math.random()}`,
+    targetType: rep.targetType || "User",
+    targetId: rep.targetId || "",
+    reason: rep.reason || "Spam",
+    description: rep.description || "",
+    status: rep.status || "Pending",
+    reporterName: rep.reporterName || rep.reporter?.fullName || rep.reporter?.username || "Thành viên",
+    targetName: rep.targetName || rep.targetUser?.fullName || rep.targetUser?.username || "Đối tượng",
+    createdAt: rep.createdAt ? rep.createdAt.split("T")[0] : "2026-07-23",
+  }));
+}
+
+// GET /api/admin/reports/{id} – Xem thông tin chi tiết một báo cáo vi phạm
+export async function fetchAdminReportById(id: string): Promise<any | null> {
+  const response = await fetch(
+    `${getBaseUrl()}/admin/reports/${encodeURIComponent(id)}`,
+    {
+      headers: buildAuthHeaders(),
+    }
+  );
+
+  if (!response.ok) {
+    if (response.status === 404) return null;
+    throw new Error("Không thể tải chi tiết báo cáo.");
+  }
+
+  const rep = await response.json().catch(() => null);
+  if (!rep) return null;
+
+  return {
+    id: rep.id || rep.reportId || "",
+    targetType: rep.targetType || "User",
+    targetId: rep.targetId || "",
+    reason: rep.reason || "",
+    description: rep.description || "",
+    status: rep.status || "Pending",
+    reporterName: rep.reporterName || rep.reporter?.fullName || rep.reporter?.username || "Thành viên",
+    targetName: rep.targetName || rep.targetUser?.fullName || rep.targetUser?.username || "Đối tượng",
+    createdAt: rep.createdAt ? rep.createdAt.split("T")[0] : "2026-07-23",
+  };
+}
+
+// PUT /api/admin/reports/{id}/approve – Chấp nhận báo cáo vi phạm (và xử lý)
+export async function approveAdminReport(id: string): Promise<void> {
+  const response = await fetch(
+    `${getBaseUrl()}/admin/reports/${encodeURIComponent(id)}/approve`,
+    {
+      method: "PUT",
+      headers: buildAuthHeaders(),
+    }
+  );
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    const errMsg = errData.error || errData.message || "Chấp nhận báo cáo thất bại.";
+    throw new Error(errMsg);
+  }
+}
+
+// PUT /api/admin/reports/{id}/reject – Bác bỏ báo cáo vi phạm
+export async function rejectAdminReport(id: string): Promise<void> {
+  const response = await fetch(
+    `${getBaseUrl()}/admin/reports/${encodeURIComponent(id)}/reject`,
+    {
+      method: "PUT",
+      headers: buildAuthHeaders(),
+    }
+  );
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    const errMsg = errData.error || errData.message || "Bác bỏ báo cáo thất bại.";
+    throw new Error(errMsg);
+  }
+}
+
+// GET /api/reports – Lấy danh sách báo cáo cá nhân đã gửi
+export async function fetchMyReports(): Promise<any[]> {
+  const token = getAuthToken();
+  if (!token) return [];
+
+  try {
+    const response = await fetch(`${getBaseUrl()}/reports`, {
+      headers: buildAuthHeaders(),
+    });
+
+    if (!response.ok) return [];
+
+    const data = await response.json().catch(() => null);
+    return Array.isArray(data) ? data : data?.items || [];
+  } catch (e) {
+    console.error("Error fetching my reports:", e);
+    return [];
+  }
+}
+
+// GET /api/reports/{id} – Xem chi tiết một báo cáo
+export async function fetchReportById(id: string): Promise<any | null> {
+  const token = getAuthToken();
+  if (!token) return null;
+
+  try {
+    const response = await fetch(
+      `${getBaseUrl()}/reports/${encodeURIComponent(id)}`,
+      {
+        headers: buildAuthHeaders(),
+      }
+    );
+
+    if (!response.ok) return null;
+
+    return await response.json().catch(() => null);
+  } catch (e) {
+    console.error(`Error fetching report ${id}:`, e);
+    return null;
+  }
+}

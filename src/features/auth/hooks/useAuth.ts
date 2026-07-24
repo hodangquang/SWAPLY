@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { mockDb } from "../../../shared/api/mockDb";
+import { toast } from "react-toastify";
 
 const getApiUrl = (endpoint: string) => {
   const base = ((import.meta as any).env.VITE_API_URL || "http://localhost:5191/api").replace(/\/+$/, "");
@@ -56,6 +57,24 @@ export function useAuth() {
           if (response.ok) {
             const data = await response.json();
             console.log("[syncProfile] Retrieved Profile Data:", data);
+
+            // Fetch current subscription status to determine if user is Premium
+            let hasActiveSub = false;
+            try {
+              const subRes = await fetch(getApiUrl("boost/current"), {
+                headers: {
+                  "accept": "*/*",
+                  "Authorization": currentUser.token.toLowerCase().startsWith("bearer ") ? currentUser.token : `Bearer ${currentUser.token}`
+                }
+              });
+              if (subRes.ok) {
+                const subData = await subRes.json().catch(() => null);
+                hasActiveSub = subData !== null;
+              }
+            } catch (err) {
+              console.warn("Failed to fetch boost current for premium state:", err);
+            }
+
             const updatedUser: UserSession = {
               ...currentUser,
               id: data.id || currentUser.id,
@@ -63,7 +82,8 @@ export function useAuth() {
               email: data.email || currentUser.email,
               avatar: data.avatarUrl || currentUser.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&h=100&q=80",
               phone: data.phoneNumber || currentUser.phone || "",
-              createdAt: data.createdAt || currentUser.createdAt || ""
+              createdAt: data.createdAt || currentUser.createdAt || "",
+              isPremium: hasActiveSub
             };
             mockDb.setCurrentUser(updatedUser);
             console.log("[syncProfile] Updated User session object:", updatedUser);
@@ -72,7 +92,8 @@ export function useAuth() {
               updatedUser.email !== currentUser.email ||
               updatedUser.avatar !== currentUser.avatar ||
               updatedUser.phone !== currentUser.phone ||
-              updatedUser.createdAt !== currentUser.createdAt
+              updatedUser.createdAt !== currentUser.createdAt ||
+              updatedUser.isPremium !== currentUser.isPremium
             ) {
               setCurrentUser(updatedUser);
             }
@@ -441,22 +462,68 @@ export function useAuth() {
     }
   };
 
-  const togglePremium = () => {
-    if (currentUser) {
-      const updatedUser = {
-        ...currentUser,
-        isPremium: !currentUser.isPremium
-      };
-      
-      mockDb.setCurrentUser(updatedUser);
-      
-      const users = mockDb.getUsers();
-      const updatedUsers = users.map((u) =>
-        u.id === currentUser.id ? { ...u, isPremium: updatedUser.isPremium } : u
-      );
-      mockDb.saveUsers(updatedUsers);
-      
-      setCurrentUser(updatedUser);
+  const togglePremium = async (): Promise<void> => {
+    if (!currentUser || !currentUser.token) {
+      toast.error("Vui lòng đăng nhập để thực hiện nâng cấp Premium.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      if (currentUser.isPremium) {
+        // Hủy gói Premium hiện tại
+        const response = await fetch(getApiUrl("boost/cancel"), {
+          method: "DELETE",
+          headers: {
+            "accept": "*/*",
+            "Authorization": currentUser.token.toLowerCase().startsWith("bearer ") ? currentUser.token : `Bearer ${currentUser.token}`
+          }
+        });
+        if (response.ok) {
+          toast.success("Đã hủy gói Premium thành công.");
+          const updatedUser: UserSession = {
+            ...currentUser,
+            isPremium: false
+          };
+          mockDb.setCurrentUser(updatedUser);
+          setCurrentUser(updatedUser);
+        } else {
+          const errData = await response.json().catch(() => ({}));
+          const errMsg = errData.error || errData.message || "Hủy gói Premium thất bại.";
+          toast.error(errMsg);
+        }
+      } else {
+        // Nâng cấp Premium bằng gói Premium Boost
+        const packageId = "22222222-2222-2222-2222-222222222222";
+        const response = await fetch(getApiUrl("Payments/checkout"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "accept": "*/*",
+            "Authorization": currentUser.token.toLowerCase().startsWith("bearer ") ? currentUser.token : `Bearer ${currentUser.token}`
+          },
+          body: JSON.stringify({ packageId })
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          const errMsg = errData.error || errData.message || "Tạo link thanh toán thất bại.";
+          toast.error(errMsg);
+          return;
+        }
+
+        const data = await response.json();
+        if (data.payUrl) {
+          toast.info("Đang chuyển hướng đến trang thanh toán...");
+          window.location.href = data.payUrl;
+        } else {
+          toast.error("Không nhận được link thanh toán từ hệ thống.");
+        }
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Lỗi xử lý nâng cấp Premium.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
