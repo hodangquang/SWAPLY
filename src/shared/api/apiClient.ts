@@ -439,13 +439,13 @@ export const apiClient = {
   },
 
   /** PUT /api/admin/reports/{id}/approve */
-  async approveAdminReport(id: string): Promise<void> {
-    return approveAdminReportApi(id);
+  async approveAdminReport(id: string, adminNote?: string): Promise<void> {
+    return approveAdminReportApi(id, adminNote);
   },
 
   /** PUT /api/admin/reports/{id}/reject */
-  async rejectAdminReport(id: string): Promise<void> {
-    return rejectAdminReportApi(id);
+  async rejectAdminReport(id: string, adminNote?: string): Promise<void> {
+    return rejectAdminReportApi(id, adminNote);
   },
 
   // ── Admin – Boost Packages ────────────────────────────────────────────────────
