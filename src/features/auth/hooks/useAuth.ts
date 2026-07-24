@@ -35,11 +35,62 @@ function parseJwt(token: string) {
   }
 }
 
+// Global Fetch Interceptor to catch 401 Unauthorized
+if (typeof window !== "undefined" && !(window as any).__fetchInterceptorAttached) {
+  (window as any).__fetchInterceptorAttached = true;
+  const originalFetch = window.fetch;
+  window.fetch = async function (...args) {
+    const response = await originalFetch(...args);
+    const requestUrl = typeof args[0] === "string" ? args[0] : (args[0] as Request).url;
+    const apiUrl = ((import.meta as any).env?.VITE_API_URL || "http://localhost:5191/api");
+    const isAuthRequest = requestUrl.toLowerCase().includes("/auth/");
+
+    if (response.status === 401 && requestUrl.includes(apiUrl) && !isAuthRequest) {
+      console.warn("[Fetch Interceptor] 401 Unauthorized detected for API:", requestUrl);
+      const hasUser = localStorage.getItem("swaply_current_user");
+      if (hasUser) {
+        localStorage.removeItem("swaply_current_user");
+        sessionStorage.clear();
+        window.location.href = window.location.origin + "?session_expired=true";
+      }
+    }
+    return response;
+  };
+}
+
 export function useAuth() {
   const [currentUser, setCurrentUser] = useState<UserSession | null>(() => {
     return mockDb.getCurrentUser();
   });
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!currentUser || !currentUser.token) return;
+
+    const checkTokenExpiry = () => {
+      const token = currentUser.token;
+      if (!token) return;
+      try {
+        const decoded = parseJwt(token);
+        if (decoded && decoded.exp) {
+          const currentTime = Math.floor(Date.now() / 1000);
+          if (decoded.exp < currentTime) {
+            console.warn("[useAuth] Token has expired passively. Triggering logout.");
+            mockDb.setCurrentUser(null);
+            setCurrentUser(null);
+            sessionStorage.clear();
+            window.location.href = window.location.origin + "?session_expired=true";
+          }
+        }
+      } catch (e) {
+        console.error("[useAuth] Error checking token expiry:", e);
+      }
+    };
+
+    checkTokenExpiry();
+    const timer = setInterval(checkTokenExpiry, 5000);
+    return () => clearInterval(timer);
+  }, [currentUser?.token]);
 
   useEffect(() => {
     const syncProfile = async () => {
