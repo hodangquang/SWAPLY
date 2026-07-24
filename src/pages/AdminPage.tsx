@@ -869,8 +869,8 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
                   className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-semibold tracking-wide transition relative group cursor-pointer ${isActive
-                      ? "bg-[#FF4D6D]/10 text-[#FF4D6D]"
-                      : "text-[#6B7280] hover:text-[#1F2937] hover:bg-gray-50"
+                    ? "bg-[#FF4D6D]/10 text-[#FF4D6D]"
+                    : "text-[#6B7280] hover:text-[#1F2937] hover:bg-gray-50"
                     }`}
                 >
                   <div className="flex items-center gap-3">
@@ -1762,12 +1762,20 @@ export default function AdminPage({ properties, onReloadData }: AdminPageProps) 
                                 <Ban className="h-3.5 w-3.5" />
                               </button>
                               <button
-                                onClick={() => {
-                                  setReportsList(reportsList.filter((r) => r.id !== rep.id));
-                                  toast.success("Đã bỏ qua báo cáo vi phạm.");
+                                onClick={async () => {
+                                  setIsLoading(true);
+                                  try {
+                                    await apiClient.approveAdminReport(rep.id, "Đã xử lý báo cáo");
+                                    setReportsList(reportsList.filter((r) => r.id !== rep.id));
+                                    toast.success("Đã duyệt và xử lý báo cáo vi phạm.");
+                                  } catch (e: any) {
+                                    toast.error(e?.message || "Không thể duyệt báo cáo.");
+                                  } finally {
+                                    setIsLoading(false);
+                                  }
                                 }}
-                                className="p-2 border border-[#EAEAEA] hover:border-slate hover:bg-gray-50 text-[#6B7280] rounded-xl transition cursor-pointer"
-                                title="Bỏ qua báo cáo"
+                                className="p-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 text-emerald-600 rounded-xl transition cursor-pointer"
+                                title="Duyệt báo cáo"
                               >
                                 <Check className="h-3.5 w-3.5" />
                               </button>

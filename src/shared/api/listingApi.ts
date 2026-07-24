@@ -19,8 +19,8 @@ const buildAuthHeaders = (extra: Record<string, string> = {}) => {
     accept: "*/*",
     ...(token
       ? {
-          Authorization: token.toLowerCase().startsWith("bearer ") ? token : `Bearer ${token}`,
-        }
+        Authorization: token.toLowerCase().startsWith("bearer ") ? token : `Bearer ${token}`,
+      }
       : {}),
     ...extra,
   };
@@ -28,7 +28,7 @@ const buildAuthHeaders = (extra: Record<string, string> = {}) => {
 
 const mapProperty = (item: any, index: number): Property => ({
   id: item.id || item.listingId || item.propertyId || `prop-${index}`,
-  
+
   // API fields
   title: item.title || item.name || "Sản phẩm đổi đồ",
   description: item.description || "Mô tả sản phẩm chưa được cập nhật.",
@@ -75,7 +75,7 @@ const mapProperty = (item: any, index: number): Property => ({
   updatedAt: item.updatedAt || new Date().toISOString(),
   expiresAt: item.expiresAt || "",
   rejectionReason: item.rejectionReason || null,
-  
+
   // Legacy/compatible fields
   hostType: item.hostType || "Chủ sở hữu",
   price: item.estimatedValue || item.estimatedAmount || item.price || 0,
@@ -311,9 +311,9 @@ export async function fetchMyListings(): Promise<Property[]> {
   return (Array.isArray(items) ? items : []).map((item: any, index: number) => ({
     ...mapProperty(item, index),
     // API returns images as objects with imageUrl field
-    images: Array.isArray(item.images) 
+    images: Array.isArray(item.images)
       ? item.images.map((img: any) => typeof img === "string" ? img : img.imageUrl || "")
-          .filter(Boolean)
+        .filter(Boolean)
       : [],
     // Additional API fields
     ownerAvatar: item.ownerAvatar || "",
@@ -439,7 +439,7 @@ export async function fetchAdminUsers(keyword: string = "", page: number = 1, pa
   if (keyword) {
     queryParams.append("keyword", keyword);
   }
-  
+
   const response = await fetch(`${getBaseUrl()}/admin/users?${queryParams.toString()}`, {
     headers: buildAuthHeaders(),
   });
@@ -485,7 +485,7 @@ export async function fetchAdminUserById(id: string): Promise<any | null> {
 
   const user = await response.json().catch(() => null);
   if (!user) return null;
-  
+
   return {
     id: user.id || user.userId || "",
     name: user.fullName || user.name || user.username || "Thành viên Swaply",
@@ -574,8 +574,8 @@ export async function fetchAdminReports(page: number = 1, pageSize: number = 100
     targetId: rep.targetId || "",
     reason: rep.reason || "Spam",
     description: rep.description || "Không có nội dung mô tả.",
-    reporterName: rep.reporterName || rep.reporter?.fullName || rep.reporter?.username || "Thành viên",
-    targetName: rep.targetName || rep.targetUser?.fullName || rep.targetUser?.username || "Đối tượng",
+    reporterName: rep.reporterName || rep.ReporterName || rep.reporter?.fullName || rep.reporter?.username || "Thành viên",
+    targetName: rep.targetName || rep.TargetName || rep.targetUser?.fullName || rep.targetUser?.username || rep.targetId || "Đối tượng",
     createdAt: rep.createdAt ? rep.createdAt.split("T")[0] : "2026-07-23",
   }));
 }
@@ -791,8 +791,8 @@ export async function fetchAdminPendingReports(): Promise<any[]> {
     reason: rep.reason || "Spam",
     description: rep.description || "",
     status: rep.status || "Pending",
-    reporterName: rep.reporterName || rep.reporter?.fullName || rep.reporter?.username || "Thành viên",
-    targetName: rep.targetName || rep.targetUser?.fullName || rep.targetUser?.username || "Đối tượng",
+    reporterName: rep.reporterName || rep.ReporterName || rep.reporter?.fullName || rep.reporter?.username || "Thành viên",
+    targetName: rep.targetName || rep.TargetName || rep.targetUser?.fullName || rep.targetUser?.username || rep.targetId || "Đối tượng",
     createdAt: rep.createdAt ? rep.createdAt.split("T")[0] : "2026-07-23",
   }));
 }
@@ -821,19 +821,20 @@ export async function fetchAdminReportById(id: string): Promise<any | null> {
     reason: rep.reason || "",
     description: rep.description || "",
     status: rep.status || "Pending",
-    reporterName: rep.reporterName || rep.reporter?.fullName || rep.reporter?.username || "Thành viên",
-    targetName: rep.targetName || rep.targetUser?.fullName || rep.targetUser?.username || "Đối tượng",
+    reporterName: rep.reporterName || rep.ReporterName || rep.reporter?.fullName || rep.reporter?.username || "Thành viên",
+    targetName: rep.targetName || rep.TargetName || rep.targetUser?.fullName || rep.targetUser?.username || rep.targetId || "Đối tượng",
     createdAt: rep.createdAt ? rep.createdAt.split("T")[0] : "2026-07-23",
   };
 }
 
 // PUT /api/admin/reports/{id}/approve – Chấp nhận báo cáo vi phạm (và xử lý)
-export async function approveAdminReport(id: string): Promise<void> {
+export async function approveAdminReport(id: string, adminNote: string = "Đã duyệt báo cáo"): Promise<void> {
   const response = await fetch(
     `${getBaseUrl()}/admin/reports/${encodeURIComponent(id)}/approve`,
     {
       method: "PUT",
-      headers: buildAuthHeaders(),
+      headers: buildAuthHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ adminNote }),
     }
   );
 
@@ -845,12 +846,13 @@ export async function approveAdminReport(id: string): Promise<void> {
 }
 
 // PUT /api/admin/reports/{id}/reject – Bác bỏ báo cáo vi phạm
-export async function rejectAdminReport(id: string): Promise<void> {
+export async function rejectAdminReport(id: string, adminNote: string = "Đã bác bỏ báo cáo"): Promise<void> {
   const response = await fetch(
     `${getBaseUrl()}/admin/reports/${encodeURIComponent(id)}/reject`,
     {
       method: "PUT",
-      headers: buildAuthHeaders(),
+      headers: buildAuthHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ adminNote }),
     }
   );
 
