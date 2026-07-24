@@ -27,23 +27,23 @@ export default function Header({
   const { navigate } = useRouter();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
-  
+
   const handleLanguageToggle = () => {
     const currentLang = localStorage.getItem("swaply_lang") || "vi";
     const nextLang = currentLang === "vi" ? "en" : "vi";
     localStorage.setItem("swaply_lang", nextLang);
-    
+
     if (nextLang === "en") {
       toast.success("Switched language to English! Reloading...");
     } else {
       toast.success("Đã chuyển ngôn ngữ sang Tiếng Việt! Đang tải lại...");
     }
-    
+
     setTimeout(() => {
       window.location.reload();
     }, 1200);
   };
-  
+
   // Search inputs
   const [searchLocation, setSearchLocation] = useState("");
   const [searchGuests, setSearchGuests] = useState(1);
@@ -67,8 +67,8 @@ export default function Header({
   return (
     <header className="sticky top-0 z-40 w-full border-b border-mist bg-cloud px-6 md:px-12 xl:px-24 h-24 flex items-center justify-between transition-all duration-300">
       {/* Left: Logo */}
-      <div 
-        id="logo-container" 
+      <div
+        id="logo-container"
         onClick={handleClearSearch}
         className="flex items-center gap-2 cursor-pointer text-brand-coral select-none hover:opacity-90 active:scale-95 transition"
       >
@@ -207,7 +207,7 @@ export default function Header({
         >
           Đăng bài đổi đồ
         </button>
-        <button 
+        <button
           onClick={handleLanguageToggle}
           className="h-9 w-9 hover:bg-fog rounded-full flex items-center justify-center text-carbon transition cursor-pointer hidden md:flex"
           title="Đổi ngôn ngữ / Change Language"
@@ -215,7 +215,7 @@ export default function Header({
           <Globe className="h-[18px] w-[18px] stroke-[1.5]" />
         </button>
         {currentUser && (
-          <button 
+          <button
             onClick={() => navigate("chat")}
             className="h-9 w-9 hover:bg-fog rounded-full flex items-center justify-center text-carbon transition cursor-pointer"
             title="Tin nhắn / Hộp thư"
@@ -233,9 +233,9 @@ export default function Header({
             <Menu className="h-[16px] w-[16px] stroke-[2] text-carbon" />
             {currentUser ? (
               currentUser.avatar ? (
-                <img 
-                  src={currentUser.avatar} 
-                  alt={currentUser.name} 
+                <img
+                  src={currentUser.avatar}
+                  alt={currentUser.name}
                   className="h-8 w-8 rounded-full object-cover shadow-sm"
                 />
               ) : (
@@ -362,7 +362,7 @@ export default function Header({
                   >
                     Đăng nhập
                   </button>
-                  
+
                   <div className="border-t border-mist my-1"></div>
 
                   <button

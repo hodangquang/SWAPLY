@@ -33,6 +33,7 @@ import {
   fetchMyListingsByStatus as fetchMyListingsByStatusApi,
   fetchListingsByCategory as fetchListingsByCategoryApi,
   fetchAdminAllListings as fetchAdminAllListingsApi,
+  fetchAdminListingById as fetchAdminListingByIdApi,
   hideListing as hideListingApi,
   restoreListing as restoreListingApi,
   fetchDeletedListings as fetchDeletedListingsApi,
@@ -384,6 +385,10 @@ export const apiClient = {
   /** GET /api/admin/listings */
   async fetchAdminAllListings(page: number = 1, pageSize: number = 100): Promise<Property[]> {
     return fetchAdminAllListingsApi(page, pageSize);
+  },
+
+  async fetchAdminListingById(id: string): Promise<Property | null> {
+    return fetchAdminListingByIdApi(id);
   },
 
   async fetchPendingListings(): Promise<Property[]> {

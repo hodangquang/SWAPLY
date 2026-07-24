@@ -79,7 +79,7 @@ const mapProperty = (item: any, index: number): Property => ({
   // Legacy/compatible fields
   hostType: item.hostType || "Chủ sở hữu",
   price: item.estimatedValue || item.estimatedAmount || item.price || 0,
-  rating: item.rating || 4.8,
+  rating: item.rating !== undefined ? item.rating : 5.0,
   reviewsCount: item.reviewsCount || 0,
   amenities: Array.isArray(item.amenities) ? item.amenities : ["Mới 99%", "Chính hãng", "Đầy đủ phụ kiện"],
   isGuestFavorite: item.isGuestFavorite !== undefined ? item.isGuestFavorite : false,
@@ -664,6 +664,24 @@ export async function fetchAdminAllListings(
       : [];
 
   return items.map((item: any, index: number) => mapProperty(item, index));
+}
+
+// GET /api/admin/listings/{id} – Xem chi tiết bài đăng trong hệ thống dành cho Admin
+export async function fetchAdminListingById(id: string): Promise<Property | null> {
+  const response = await fetch(
+    `${getBaseUrl()}/admin/listings/${encodeURIComponent(id)}`,
+    {
+      headers: buildAuthHeaders(),
+    }
+  );
+
+  if (!response.ok) {
+    if (response.status === 404) return null;
+    throw new Error("Không thể tải chi tiết bài đăng.");
+  }
+
+  const data = await response.json().catch(() => null);
+  return data ? mapProperty(data, 0) : null;
 }
 
 // PUT /api/admin/listings/{id}/hide – Ẩn bài viết vi phạm
