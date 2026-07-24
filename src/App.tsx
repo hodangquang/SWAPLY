@@ -202,6 +202,17 @@ function AppContent() {
   }, [currentUser]);
 
   useEffect(() => {
+    const checkExpiredParam = () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("session_expired") === "true") {
+        toast.warn("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+        const newSearch = window.location.search.replace(/[?&]session_expired=true/, "").replace(/^\?$/, "");
+        const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
+        window.history.replaceState({}, "", newUrl || "/");
+      }
+    };
+    checkExpiredParam();
+
     const handlePaymentRedirect = async () => {
       const path = window.location.pathname;
       if (path.includes("/payment/result")) {
